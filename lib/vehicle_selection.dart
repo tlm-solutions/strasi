@@ -71,7 +71,7 @@ class _VehicleSelectionState extends State<VehicleSelection> {
               BackgroundLocation.setAndroidConfiguration(3000);
               BackgroundLocation.startLocationService();
               BackgroundLocation.getLocationUpdates((location) async {
-                var response = await http.post(
+                await http.post(
                     Uri.http('172.22.99.177:3000'),
                     headers: {"Content-Type": "application/json"},
                     body: json.encode({
