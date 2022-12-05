@@ -26,6 +26,8 @@ ThemeData _appTheme() {
     colorScheme: ColorScheme.fromSwatch(primarySwatch: dvbYellow),
     textTheme: _textTheme(base.textTheme),
     inputDecorationTheme: _inputDecorationTheme(base.inputDecorationTheme),
+    dividerTheme: _dividerTheme(base.dividerTheme),
+    snackBarTheme: _snackBarTheme(base.snackBarTheme),
   );
 }
 
@@ -53,4 +55,15 @@ InputDecorationTheme _inputDecorationTheme(InputDecorationTheme base) =>
       filled: true
     );
 
+DividerThemeData _dividerTheme(DividerThemeData base) =>
+    base.copyWith(
+      space: 8,
+      indent: 0,
+      endIndent: 0,
+      thickness: 1,
+    );
 
+SnackBarThemeData _snackBarTheme(SnackBarThemeData base) =>
+    base.copyWith(
+      backgroundColor: dvbYellow.shade900,
+    );

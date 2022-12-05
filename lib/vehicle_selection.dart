@@ -14,7 +14,7 @@ class VehicleSelection extends StatefulWidget {
 }
 
 class _VehicleSelectionState extends State<VehicleSelection> {
-  int? vehicleNumber;
+  int? lineNumber;
   int? runNumber;
   final _dropdownFormKey = GlobalKey<FormState>();
   bool started = false;
@@ -29,15 +29,15 @@ class _VehicleSelectionState extends State<VehicleSelection> {
         children: [
           TextFormField(
             enabled: !started,
-            decoration: const InputDecoration(labelText: "vehicle number"),
+            decoration: const InputDecoration(labelText: "line number"),
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (String? value) {
               setState(() {
-                vehicleNumber = value != null && value.isNotEmpty ? int.parse(value) : null;
+                lineNumber = value != null && value.isNotEmpty ? int.parse(value) : null;
               });
             },
-            validator: (value) => value != null && value.isNotEmpty ? null : 'Enter vehicle number',
+            validator: (value) => value != null && value.isNotEmpty ? null : 'Enter the line number',
           ),
           TextFormField(
             enabled: !started,
@@ -65,21 +65,27 @@ class _VehicleSelectionState extends State<VehicleSelection> {
                 started = true;
               });
 
+              final db = await widget.database;
+              final recordingId = await db.insert("recordings", {
+                "line_number": lineNumber,
+                "run_number": runNumber,
+              });
+
               BackgroundLocation.setAndroidNotification(
                 title: "Stasi",
                 message: "Stasi is watching you!",
-                icon: "@mipmap/ic_launcher"
+                icon: "@mipmap/ic_launcher",
               );
               BackgroundLocation.setAndroidConfiguration(3000);
               BackgroundLocation.startLocationService();
+
               BackgroundLocation.getLocationUpdates((location) async {
-                final db = await widget.database;
-                await db.insert("runs", {
-                  "vehicle_number": vehicleNumber,
-                  "run_number": runNumber,
+                await db.insert("cords", {
                   "latitude": location.latitude,
                   "longitude": location.longitude,
+                  "altitude": location.altitude,
                   "speed": location.speed,
+                  "recording_id": recordingId,
                 });
               });
             },
@@ -89,5 +95,4 @@ class _VehicleSelectionState extends State<VehicleSelection> {
       )
     );
   }
-
 }

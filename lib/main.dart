@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:stasi/recording_manager.dart';
 import 'package:stasi/theme.dart';
 import 'package:stasi/vehicle_selection.dart';
 
@@ -8,11 +9,34 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final database = openDatabase(
     join(await getDatabasesPath(), "cords"),
-    onCreate: (db, version) {
-      return db.execute('CREATE TABLE runs(id INTEGER PRIMARY KEY, vehicle_number INTEGER NOT NULL, run_number INTEGER NOT NULL, time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, latitude DOUBLE NOT NULL, longitude DOUBLE NOT NULL, speed DOUBLE NOT NULL);');
+    onCreate: (db, version) async {
+      await db.execute('''
+        CREATE TABLE recordings (
+          id INTEGER PRIMARY KEY,
+          line_number INTEGER NOT NULL,
+          run_number INTEGER NOT NULL
+        );
+      ''');
+
+      await db.execute('''
+        CREATE TABLE cords (
+          id INTEGER PRIMARY KEY,
+          time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          latitude DOUBLE NOT NULL,
+          longitude DOUBLE NOT NULL,
+          altitude DOUBLE NOT NULL,
+          speed DOUBLE NOT NULL,
+          recording_id INTEGER NOT NULL,
+          FOREIGN KEY (recording_id) REFERENCES recordings (id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE
+        );
+      
+      ''');
     },
     version: 1,
   );
+
   runApp(MyApp(database: database));
 }
 
@@ -43,18 +67,18 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
+    final PageController controller = PageController();
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Expanded(child: VehicleSelection(database: widget.database))
-          ],
-        ),
-      ),
+      body: PageView(
+        controller: controller,
+        children: [
+          VehicleSelection(database: widget.database),
+          RecordingManager(database: widget.database),
+        ],
+      )
     );
   }
 }
