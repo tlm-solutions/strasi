@@ -165,7 +165,7 @@ Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording)
       "stop": recording.stop.toIso8601String(),
     },
   );
-  gpx.creator = "Stasi for ${io.Platform.operatingSystem} - https://github.com/dump-dvb/trekkie";
+  gpx.creator = "Stasi for ${io.Platform.operatingSystem} - https://github.com/dump-dvb/stasi";
   gpx.version = "1.1";
   gpx.trks = [Trk(
     trksegs: [Trkseg(
