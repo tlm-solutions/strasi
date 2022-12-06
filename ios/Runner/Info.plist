@@ -51,6 +51,10 @@
     <string>This app needs access to location.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>This app needs access to location.</string>
+    <key>UIFileSharingEnabled</key>
+    <true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
     <key>UIBackgroundModes</key>
     <array>
     	<string>fetch</string>

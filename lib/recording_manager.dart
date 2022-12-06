@@ -6,8 +6,10 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:sqflite/sqflite.dart';
 import 'package:gpx/gpx.dart';
+import 'package:intl/intl.dart';
 import 'package:stasi/recording.dart';
 import 'package:stasi/theme.dart';
+
 
 class RecordingManager extends StatefulWidget {
   final Future<Database> database;
@@ -22,12 +24,12 @@ class _RecordingManagerState extends State<RecordingManager> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: _getRecordings(widget.database),
+        future: Recording.fromDb(widget.database),
         builder: (context, AsyncSnapshot<List<Recording>> snapshot) {
           if (snapshot.hasError) {
             throw snapshot.error!;
           } else if (snapshot.hasData) {
-            final recordings = snapshot.data!;
+            final recordings = snapshot.data!.reversed.toList();
 
             return ListView.separated(
               padding: const EdgeInsets.all(4),
@@ -36,24 +38,14 @@ class _RecordingManagerState extends State<RecordingManager> {
                   _RecordEntry(
                     recording: recordings[index],
                     onExport: () async {
-                      final scaffoldMessenger = ScaffoldMessenger.of(context);
-                      if (!io.Platform.isAndroid) {
-                        scaffoldMessenger.showSnackBar(const SnackBar(
-                          content: Text("Exporting only works on Android."),
-                          backgroundColor: Colors.red,
-                        ));
-                        return;
-                      }
-
                       final gpxPath = await _exportCoordinatesToFile(
                         widget.database, recordings[index]
                       );
 
-                      if (kDebugMode) {
-                        print("GPX-Path: $gpxPath");
-                      }
-
-                      scaffoldMessenger.showSnackBar(SnackBar(
+                      if (kDebugMode) print("GPX-Path: $gpxPath");
+                      
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text("Stored to $gpxPath"),
                       ));
                     },
@@ -157,39 +149,58 @@ class _OverflowingText extends StatelessWidget {
   }
 }
 
-Future<List<Recording>> _getRecordings(Future<Database> database) async {
-  final db = await database;
-  return (await db.query('recordings')).map((run) => Recording.fromDict(run)).toList();
-}
-
-Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, int recordingId) async {
+Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording) async {
   final db = await database;
 
   final gpx = Gpx();
-  gpx.creator = "stasi";
-  gpx.wpts = (await db.query(
-    "cords",
-    columns: ["recording_id", "latitude", "longitude", "altitude", "time"],
-    where: "recording_id = ?",
-    whereArgs: [recordingId],
-  )).map((cordMap) => Wpt(
-    lat: cordMap["latitude"] as double,
-    lon: cordMap["longitude"] as double,
-    ele: cordMap["altitude"] as double,
-    time: DateTime.parse(cordMap["time"] as String),
-  )).toList();
+  gpx.metadata = Metadata(
+    name: DateFormat("y-M-d_H-m-s").format(DateTime.now().toUtc()),
+    desc: "Tracked by your friendly stasi comrades.",
+    keywords: "stasi",
+    time: DateTime.now().toUtc(),
+    extensions: {
+      "line": "${recording.lineNumber}",
+      "run": "${recording.runNumber}",
+      "start": recording.start.toIso8601String(),
+      "stop": recording.stop.toIso8601String(),
+    },
+  );
+  gpx.creator = "Stasi for ${io.Platform.operatingSystem} - https://github.com/dump-dvb/trekkie";
+  gpx.version = "1.1";
+  gpx.trks = [Trk(
+    trksegs: [Trkseg(
+      trkpts: (await db.query(
+          "cords",
+          columns: ["recording_id", "latitude", "longitude", "speed", "altitude", "time"],
+          where: "recording_id = ?",
+          whereArgs: [recording.id],
+        )).map((cordMap) => Wpt(
+          lat: cordMap["latitude"] as double,
+          lon: cordMap["longitude"] as double,
+          ele: cordMap["altitude"] as double,
+          time: DateTime.parse(cordMap["time"] as String),
+          extensions: {"speed": '${cordMap["speed"] as double}'},
+        )).toList(),
+    )]
+  )];
 
   return gpx;
 }
 
 Future<String> _exportCoordinatesToFile(Future<Database> database, Recording recording) async {
-  final gpxData = await _getCoordinatesAsGpx(database, recording.id);
+  final gpxData = await _getCoordinatesAsGpx(database, recording);
 
   // This should be the start or stop time
-  final secondsEpoch = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+  final secondsEpoch = (DateTime.now().toUtc().millisecondsSinceEpoch / 1000).round();
   final fileName = "${recording.id}_${recording.lineNumber}_${recording.runNumber}_$secondsEpoch.gpx";
 
-  final storageDir = (await path_provider.getExternalStorageDirectory())!;
+  final io.Directory storageDir;
+  if (io.Platform.isAndroid) {
+    storageDir = (await path_provider.getExternalStorageDirectory())!;
+  } else {
+    storageDir = await path_provider.getApplicationDocumentsDirectory();
+  }
+
   final gpxPath = path.join(storageDir.path, fileName);
   final gpxFile = io.File(gpxPath);
 

@@ -10,6 +10,8 @@ void main() async {
   final database = openDatabase(
     join(await getDatabasesPath(), "cords"),
     onCreate: (db, version) async {
+      await db.execute("PRAGMA foreign_keys = ON;");
+
       await db.execute('''
         CREATE TABLE recordings (
           id INTEGER PRIMARY KEY,
@@ -31,7 +33,6 @@ void main() async {
             ON UPDATE CASCADE
             ON DELETE CASCADE
         );
-      
       ''');
     },
     version: 1,
