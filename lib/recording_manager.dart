@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:gpx/gpx.dart';
 import 'package:intl/intl.dart';
 import 'package:stasi/recording.dart';
+import 'package:stasi/running_recording.dart';
 import 'package:stasi/theme.dart';
 
 
@@ -29,28 +31,39 @@ class _RecordingManagerState extends State<RecordingManager> {
           if (snapshot.hasError) {
             throw snapshot.error!;
           } else if (snapshot.hasData) {
-            final recordings = snapshot.data!.reversed.toList();
 
-            return ListView.separated(
-              padding: const EdgeInsets.all(4),
-              itemCount: recordings.length,
-              itemBuilder: (context, index) =>
-                  _RecordEntry(
+            return Consumer<RunningRecording>(
+              builder: (context, curRecording, child) {
+                final recordings = snapshot.data!.reversed
+                    .where((recording) => recording.id != curRecording.recordingId)
+                    .toList();
+
+                return ListView.separated(
+                  padding: const EdgeInsets.all(4),
+                  itemCount: recordings.length,
+                  itemBuilder: (context, index) => _RecordingEntry(
                     recording: recordings[index],
                     onExport: () async {
+                      final scaffoldMessenger = ScaffoldMessenger.of(context);
+
                       final gpxPath = await _exportCoordinatesToFile(
-                        widget.database, recordings[index]
+                          widget.database, recordings[index]
                       );
 
                       if (kDebugMode) print("GPX-Path: $gpxPath");
-                      
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+
+                      scaffoldMessenger.showSnackBar(SnackBar(
                         content: Text("Stored to $gpxPath"),
                       ));
                     },
+                    onDelete: () async {
+                      await _deleteRecording(widget.database, recordings[index]);
+                      setState(() {});
+                    },
                   ),
-              separatorBuilder: (context, index) => const Divider(),
+                  separatorBuilder: (context, index) => const Divider(),
+                );
+              },
             );
           }
 
@@ -61,15 +74,17 @@ class _RecordingManagerState extends State<RecordingManager> {
   }
 }
 
-class _RecordEntry extends StatelessWidget {
-  const _RecordEntry({
+class _RecordingEntry extends StatelessWidget {
+  const _RecordingEntry({
     Key? key,
     required this.recording,
     required this.onExport,
+    required this.onDelete,
   }) : super(key: key);
 
   final Recording recording;
   final Future<void> Function() onExport;
+  final Future<void> Function() onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +122,11 @@ class _RecordEntry extends StatelessWidget {
                             IconButton(
                               onPressed: onExport,
                               icon: const Icon(Icons.save_alt),
-                            )
+                            ),
+                            IconButton(
+                              onPressed: onDelete,
+                              icon: const Icon(Icons.delete),
+                            ),
                           ]
                         )
                     )
@@ -206,4 +225,11 @@ Future<String> _exportCoordinatesToFile(Future<Database> database, Recording rec
 
   await gpxFile.writeAsString(GpxWriter().asString(gpxData, pretty: true));
   return gpxPath;
+}
+
+Future<void> _deleteRecording(Future<Database> database, Recording recording) async {
+  final db = await database;
+
+  // cords should just be deleted via foreign key but that doesnt wok
+  await db.delete("recordings", where: "id = ?", whereArgs: [recording.id]);
 }

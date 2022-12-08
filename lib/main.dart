@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:provider/provider.dart';
 import 'package:stasi/recording_manager.dart';
+import 'package:stasi/running_recording.dart';
 import 'package:stasi/theme.dart';
 import 'package:stasi/vehicle_selection.dart';
 
@@ -9,9 +11,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final database = openDatabase(
     join(await getDatabasesPath(), "cords"),
+    onConfigure: (db) async {
+      await db.execute('PRAGMA foreign_keys = ON');
+    },
     onCreate: (db, version) async {
-      await db.execute("PRAGMA foreign_keys = ON;");
-
       await db.execute('''
         CREATE TABLE recordings (
           id INTEGER PRIMARY KEY,
@@ -73,13 +76,17 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: PageView(
-        controller: controller,
-        children: [
-          VehicleSelection(database: widget.database),
-          RecordingManager(database: widget.database),
-        ],
-      )
+      body: ChangeNotifierProvider(
+        create: (context) => RunningRecording(),
+        child: PageView(
+          controller: controller,
+          children: [
+            VehicleSelection(database: widget.database),
+            RecordingManager(database: widget.database),
+          ],
+        ),
+      ),
     );
   }
 }
+
