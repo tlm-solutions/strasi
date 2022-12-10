@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:gpx/gpx.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:stasi/recording.dart';
 import 'package:stasi/running_recording.dart';
 import 'package:stasi/theme.dart';
@@ -60,6 +64,13 @@ class _RecordingManagerState extends State<RecordingManager> {
                       await _deleteRecording(widget.database, recordings[index]);
                       setState(() {});
                     },
+                    onUpload: () async {
+                      final scaffoldMessenger = ScaffoldMessenger.of(context);
+                      await _uploadRecording(widget.database, recordings[index]);
+                      scaffoldMessenger.showSnackBar(const SnackBar(
+                          content: Text("Uploaded!")
+                      ));
+                    },
                   ),
                   separatorBuilder: (context, index) => const Divider(),
                 );
@@ -80,11 +91,13 @@ class _RecordingEntry extends StatelessWidget {
     required this.recording,
     required this.onExport,
     required this.onDelete,
+    required this.onUpload,
   }) : super(key: key);
 
   final Recording recording;
   final Future<void> Function() onExport;
   final Future<void> Function() onDelete;
+  final Future<void> Function() onUpload;
 
   @override
   Widget build(BuildContext context) {
@@ -126,6 +139,10 @@ class _RecordingEntry extends StatelessWidget {
                             IconButton(
                               onPressed: onDelete,
                               icon: const Icon(Icons.delete),
+                            ),
+                            IconButton(
+                              onPressed: onUpload,
+                              icon: const Icon(Icons.upload),
                             ),
                           ]
                         )
@@ -233,3 +250,115 @@ Future<void> _deleteRecording(Future<Database> database, Recording recording) as
   // cords should just be deleted via foreign key but that doesnt wok
   await db.delete("recordings", where: "id = ?", whereArgs: [recording.id]);
 }
+
+class _LoginData {
+  const _LoginData({
+    required this.userId,
+    required this.password,
+  });
+
+  final String userId;
+  final String password;
+
+  Map<String, String> toMap() => {"user_id": userId, "password": password};
+}
+
+class _Session {
+  static final _Session _session = _Session._internal();
+
+  factory _Session() {
+    return _session;
+  }
+
+  _Session._internal(): _url = "trekkie.staging.dvb.solutions";
+
+  final String _url;
+  io.Cookie? _cookie;
+
+
+  Future<bool> loginUser(_LoginData loginData) async {
+    final response = await http.post(
+      Uri(scheme: "https", host: _url, path: "/user/login"),
+      body: jsonEncode(loginData.toMap()),
+      headers: {"Content-Type": "application/json"}
+    );
+    if (response.statusCode != 200) return false;
+    _updateCookie(response.headers);
+    return true;
+  }
+
+  Future<_LoginData?> createAccount() async {
+    final response = await http.post(Uri(scheme: "https", host: _url, path: "/user/create"));
+    if (response.statusCode != 200) return null;
+    _updateCookie(response.headers);
+    final responseDict = jsonDecode(response.body);
+    return _LoginData(userId: responseDict["user_id"], password: responseDict["password"]);
+  }
+
+  Future<bool> sendGpx(Gpx gpx, Recording recording) async {
+    final gpxRequest = http.MultipartRequest("POST", Uri.parse("https://trekkie.staging.dvb.solutions/travel/submit/gpx"));
+    gpxRequest.files.add(http.MultipartFile.fromString(
+      "yo mama",
+      GpxWriter().asString(gpx, pretty: true),
+      contentType: MediaType("text", "xml"),
+    ));
+    gpxRequest.headers["cookie"] = await _getCookie();
+    final gpxResponse = await gpxRequest.send();
+    if (gpxResponse.statusCode != 200) return false;
+
+    final timesJson = {
+      "gpx_id": jsonDecode(await gpxResponse.stream.bytesToString())["gpx_id"],
+      "vehicles": [{
+        "start": recording.start.toIso8601String(),
+        "stop": recording.stop.toIso8601String(),
+        "line": recording.lineNumber,
+        "run": recording.runNumber,
+        "region": 0,
+      }]
+    };
+
+    final submitResponse = await http.post(
+      Uri(scheme: "https", host: _url, path: "/travel/submit/run"),
+      headers: {"cookie": await _getCookie(), "Content-Type": "application/json"},
+      body: jsonEncode(timesJson),
+    );
+
+    return submitResponse.statusCode == 200;
+  }
+
+  void _updateCookie(Map<String, String> headers) {
+    _cookie = io.Cookie.fromSetCookieValue(headers["set-cookie"]!);
+  }
+
+  Future<_LoginData> _getLoginData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString("user_id");
+
+    if (userId != null) {
+      final password = prefs.getString("password")!;
+      return _LoginData(userId: userId, password: password);
+    }
+
+    final loginData = (await createAccount())!;
+
+    prefs.setString("user_id", loginData.userId);
+    prefs.setString("password", loginData.password);
+
+    return loginData;
+  }
+
+  Future<String> _getCookie() async {
+    if (_cookie == null /* || _cookie!.expires!.isAfter(DateTime.now().toUtc()) */) {
+      final loginData = await _getLoginData();
+      assert (await loginUser(loginData));
+    }
+    return _cookie!.value;
+  }
+}
+
+Future<void> _uploadRecording(Future<Database> database, Recording recording) async {
+  final gpx = await _getCoordinatesAsGpx(database, recording);
+
+  await _Session().sendGpx(gpx, recording);
+}
+
