@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -83,6 +84,9 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             VehicleSelection(database: widget.database),
             RecordingManager(database: widget.database),
+            const LicensePage(
+              applicationName: "Stasi",
+            ),
           ],
         ),
       ),
