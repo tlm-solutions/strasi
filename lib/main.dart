@@ -1,5 +1,7 @@
+import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:provider/provider.dart';
 import 'package:stasi/recording_manager.dart';
@@ -9,8 +11,16 @@ import 'package:stasi/vehicle_selection.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final String databasePath;
+  if (io.Platform.isIOS) {
+    databasePath = (await getLibraryDirectory()).path;
+  } else {
+    databasePath = await getDatabasesPath();
+  }
+
   final database = openDatabase(
-    join(await getDatabasesPath(), "cords"),
+    join(databasePath, "cords.db"),
     onConfigure: (db) async {
       await db.execute('PRAGMA foreign_keys = ON');
     },
@@ -19,7 +29,8 @@ void main() async {
         CREATE TABLE recordings (
           id INTEGER PRIMARY KEY,
           line_number INTEGER NOT NULL,
-          run_number INTEGER NOT NULL
+          run_number INTEGER NOT NULL,
+          is_uploaded BOOLEAN NOT NULL CHECK (is_uploaded IN (0, 1)) DEFAULT 0
         );
       ''');
 

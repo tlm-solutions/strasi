@@ -1,20 +1,20 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io' as io;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:gpx/gpx.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
-import 'package:stasi/recording.dart';
-import 'package:stasi/running_recording.dart';
-import 'package:stasi/theme.dart';
+
+import 'recording.dart';
+import 'running_recording.dart';
+import 'theme.dart';
+import 'api_client.dart';
 
 
 class RecordingManager extends StatefulWidget {
@@ -72,10 +72,13 @@ class _RecordingManagerState extends State<RecordingManager> {
                         scaffoldMessenger.showSnackBar(const SnackBar(
                             content: Text("We couldn't connect to the KGB server. Is your Internet working?")
                         ));
+                        return;
                       }
                       scaffoldMessenger.showSnackBar(const SnackBar(
                           content: Text("Uploaded!")
                       ));
+                      await _markUploadDone(widget.database, recordings[index]);
+                      setState(() {});
                     },
                   ),
                   separatorBuilder: (context, index) => const Divider(),
@@ -92,7 +95,7 @@ class _RecordingManagerState extends State<RecordingManager> {
 }
 
 class _RecordingEntry extends StatelessWidget {
-  const _RecordingEntry({
+  _RecordingEntry({
     Key? key,
     required this.recording,
     required this.onExport,
@@ -104,6 +107,17 @@ class _RecordingEntry extends StatelessWidget {
   final Future<void> Function() onExport;
   final Future<void> Function() onDelete;
   final Future<void> Function() onUpload;
+  final ValueNotifier<bool> _buttonsLoadingNotifier = ValueNotifier(false);
+
+  Future<void> Function() _wrapWithNotifier(Future<void> Function() toWrap) {
+    Future<void> wrappedFunction() async {
+      _buttonsLoadingNotifier.value = true;
+      await toWrap();
+      _buttonsLoadingNotifier.value = false;
+    }
+
+    return wrappedFunction;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,22 +148,30 @@ class _RecordingEntry extends StatelessWidget {
             Flexible(
               flex: 2,
               child: Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: onExport,
-                      icon: const Icon(Icons.save_alt),
-                    ),
-                    IconButton(
-                      onPressed: onDelete,
-                      icon: const Icon(Icons.delete),
-                    ),
-                    IconButton(
-                      onPressed: onUpload,
-                      icon: const Icon(Icons.upload),
-                    ),
-                  ]
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _buttonsLoadingNotifier,
+                  builder: (context, buttonsLoading, _) {
+                    if (buttonsLoading) {
+                      return const CircularProgressIndicator();
+                    }
+                    return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            onPressed: _wrapWithNotifier(onExport),
+                            icon: const Icon(Icons.save_alt),
+                          ),
+                          IconButton(
+                            onPressed: _wrapWithNotifier(onDelete),
+                            icon: const Icon(Icons.delete),
+                          ),
+                          IconButton(
+                            onPressed: recording.isUploaded ? null : _wrapWithNotifier(onUpload),
+                            icon: recording.isUploaded ? const Icon(Icons.done) : const Icon(Icons.upload),
+                          ),
+                        ]
+                    );
+                  },
                 )
               )
             )
@@ -257,118 +279,20 @@ Future<void> _deleteRecording(Future<Database> database, Recording recording) as
   await db.delete("recordings", where: "id = ?", whereArgs: [recording.id]);
 }
 
-class _LoginData {
-  const _LoginData({
-    required this.userId,
-    required this.password,
-  });
-
-  final String userId;
-  final String password;
-
-  Map<String, String> toMap() => {"user_id": userId, "password": password};
-}
-
-class _Session {
-  static final _Session _session = _Session._internal();
-
-  factory _Session() {
-    return _session;
-  }
-
-  _Session._internal(): _url = "trekkie.staging.dvb.solutions";
-
-  final String _url;
-  io.Cookie? _cookie;
-
-  Future<void> loginUser(_LoginData loginData) async {
-    final response = await http.post(
-      Uri(scheme: "https", host: _url, path: "/user/login"),
-      body: jsonEncode(loginData.toMap()),
-      headers: {"Content-Type": "application/json"}
-    );
-
-    if (response.statusCode != 200) throw http.ClientException(response.body);
-    _updateCookie(response.headers);
-  }
-
-  Future<_LoginData?> createAccount() async {
-    final response = await http.post(Uri(scheme: "https", host: _url, path: "/user/create"));
-    if (response.statusCode != 200) throw http.ClientException(response.body);
-    _updateCookie(response.headers);
-    final responseDict = jsonDecode(response.body);
-    return _LoginData(userId: responseDict["user_id"], password: responseDict["password"]);
-  }
-
-  Future<void> sendGpx(Gpx gpx, Recording recording) async {
-    final gpxUri = Uri(scheme: "https", host: _url, path: "/travel/submit/gpx");
-
-    final gpxRequest = http.MultipartRequest("POST", gpxUri)
-      ..files.add(http.MultipartFile.fromString(
-        "yo mama",
-        GpxWriter().asString(gpx, pretty: true),
-        contentType: MediaType("text", "xml"),
-      ))
-      ..headers["cookie"] = await _getCookie();
-
-    final gpxResponse = await gpxRequest.send();
-    if (gpxResponse.statusCode != 200) {
-      final errorCode = gpxResponse.statusCode;
-      final errorMessage = await gpxResponse.stream.bytesToString();
-
-      throw http.ClientException("$errorCode: $errorMessage");
-    }
-
-    final timesJson = {
-      "gpx_id": jsonDecode(await gpxResponse.stream.bytesToString())["gpx_id"],
-      "vehicles": [{
-        "start": recording.start.toIso8601String(),
-        "stop": recording.stop.toIso8601String(),
-        "line": recording.lineNumber,
-        "run": recording.runNumber,
-        "region": 0,
-      }]
-    };
-
-    final submitResponse = await http.post(
-      Uri(scheme: "https", host: _url, path: "/travel/submit/run"),
-      headers: {"cookie": await _getCookie(), "Content-Type": "application/json"},
-      body: jsonEncode(timesJson),
-    );
-
-    if (submitResponse.statusCode != 200) throw http.ClientException(submitResponse.body);
-  }
-
-  void _updateCookie(Map<String, String> headers) {
-    _cookie = io.Cookie.fromSetCookieValue(headers["set-cookie"]!);
-  }
-
-  Future<void> _refreshCookie() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString("user_id");
-
-    if (userId != null) {
-      final password = prefs.getString("password")!;
-      await loginUser(_LoginData(userId: userId, password: password));
-      return;
-    }
-
-    final loginData = (await createAccount())!;
-
-    prefs.setString("user_id", loginData.userId);
-    prefs.setString("password", loginData.password);
-  }
-
-  Future<String> _getCookie() async {
-    if (_cookie == null) {
-      await _refreshCookie();
-    }
-    return "${_cookie!.name}=${_cookie!.value}";
-  }
-}
 
 Future<void> _uploadRecording(Future<Database> database, Recording recording) async {
   final gpx = await _getCoordinatesAsGpx(database, recording);
 
-  await _Session().sendGpx(gpx, recording);
+  await ApiClient().sendGpx(gpx, recording);
+}
+
+Future<void> _markUploadDone(Future<Database> database, Recording recording) async {
+  final db = await database;
+
+  await db.update(
+    "recordings",
+    {"is_uploaded": true},
+    where: "id = ?",
+    whereArgs: [recording.id]
+  );
 }
