@@ -31,3 +31,10 @@ jobs:
         with:
          name: stasi apk
          path: "build/app/outputs/flutter-apk/app-*.apk"
+
+      - uses: alexellis/upload-assets@0.4.0
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          asset_paths: '["build/app/outputs/flutter-apk/app-*.apk"]'
