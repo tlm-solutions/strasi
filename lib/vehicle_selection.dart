@@ -50,9 +50,6 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
 
                   _scheduleUpdateRecording(recording.recordingId!);
                 },
-                onEditingComplete: () {
-                  print("yy");
-                },
                 validator: (value) => value != null && value.isNotEmpty ? null : 'Enter the line number',
               ),
               TextFormField(

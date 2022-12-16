@@ -84,7 +84,7 @@ class _RecordingEditorMap extends StatelessWidget {
         ),
         PolylineLayer(
           polylines: [Polyline(
-            points: Path.from(points).equalize(30, smoothPath: true).coordinates,
+            points: points,
             strokeWidth: 10,
           )],
         ),
