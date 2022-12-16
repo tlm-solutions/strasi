@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@transistorsoft/capacitor-background-fetch": "^1.0.2"
+  }
+}
