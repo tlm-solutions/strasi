@@ -28,8 +28,8 @@ void main() async {
       await db.execute('''
         CREATE TABLE recordings (
           id INTEGER PRIMARY KEY,
-          line_number INTEGER NOT NULL,
-          run_number INTEGER NOT NULL,
+          line_number INTEGER,
+          run_number INTEGER,
           is_uploaded BOOLEAN NOT NULL CHECK (is_uploaded IN (0, 1)) DEFAULT 0
         );
       ''');
