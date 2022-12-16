@@ -19,7 +19,7 @@ jobs:
         uses: subosito/flutter-action@v1
         with:
           flutter-version: '2.10.1'
-
+      - run: flutter upgrade
       # Install your project's dependencies
       - run: flutter pub get
 
@@ -43,11 +43,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      
+
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      
+
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
