@@ -2,8 +2,8 @@ import 'package:sqflite/sqflite.dart';
 
 class Recording {
   int id;
-  int lineNumber;
-  int runNumber;
+  int? lineNumber;
+  int? runNumber;
   bool isUploaded;
   DateTime start;
   DateTime stop;
@@ -29,8 +29,8 @@ class Recording {
     return recordingDict.map((entry) =>
       Recording(
           id: entry["id"] as int,
-          lineNumber: entry["line_number"] as int,
-          runNumber: entry["run_number"] as int,
+          lineNumber: entry["line_number"] as int?,
+          runNumber: entry["run_number"] as int?,
           isUploaded: (entry["is_uploaded"] as int) != 0,
           start: DateTime.parse(entry["start"] as String),
           stop: DateTime.parse(entry["stop"] as String),

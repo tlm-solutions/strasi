@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 
 import 'recording.dart';
+import 'recording_editor_route.dart';
 import 'running_recording.dart';
 import 'theme.dart';
 import 'api_client.dart';
@@ -80,6 +81,14 @@ class _RecordingManagerState extends State<RecordingManager> {
                       await _markUploadDone(widget.database, recordings[index]);
                       setState(() {});
                     },
+                    onEdit: () async {
+                      Navigator.push(context, MaterialPageRoute(
+                          builder: (context) => RecordingEditorRoute(
+                              database: widget.database,
+                              recording: recordings[index],
+                          )
+                      ));
+                    },
                   ),
                   separatorBuilder: (context, index) => const Divider(),
                 );
@@ -101,12 +110,14 @@ class _RecordingEntry extends StatelessWidget {
     required this.onExport,
     required this.onDelete,
     required this.onUpload,
+    required this.onEdit,
   }) : super(key: key);
 
   final Recording recording;
   final Future<void> Function() onExport;
   final Future<void> Function() onDelete;
   final Future<void> Function() onUpload;
+  final Future<void> Function() onEdit;
   final ValueNotifier<bool> _buttonsLoadingNotifier = ValueNotifier(false);
 
   Future<void> Function() _wrapWithNotifier(Future<void> Function() toWrap) {
@@ -156,18 +167,31 @@ class _RecordingEntry extends StatelessWidget {
                     }
                     return Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
                             onPressed: _wrapWithNotifier(onExport),
+                            padding: const EdgeInsets.all(6.0),
+                            constraints: const BoxConstraints(),
                             icon: const Icon(Icons.save_alt),
                           ),
                           IconButton(
                             onPressed: _wrapWithNotifier(onDelete),
+                            padding: const EdgeInsets.all(6.0),
+                            constraints: const BoxConstraints(),
                             icon: const Icon(Icons.delete),
                           ),
                           IconButton(
                             onPressed: recording.isUploaded ? null : _wrapWithNotifier(onUpload),
+                            padding: const EdgeInsets.all(6.0),
+                            constraints: const BoxConstraints(),
                             icon: recording.isUploaded ? const Icon(Icons.done) : const Icon(Icons.upload),
+                          ),
+                          IconButton(
+                            onPressed: _wrapWithNotifier(onEdit),
+                            padding: const EdgeInsets.all(6.0),
+                            constraints: const BoxConstraints(),
+                            icon: const Icon(Icons.edit),
                           ),
                         ]
                     );
