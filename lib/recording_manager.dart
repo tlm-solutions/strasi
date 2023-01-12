@@ -140,67 +140,61 @@ class _RecordingEntry extends StatelessWidget {
       ),
       child: Stack(children: [
         _OverflowingText("${recording.lineNumber}"),
-        Row(
+        Table(
+          defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          columnWidths: const {
+            1: FlexColumnWidth(2),
+            2: FlexColumnWidth(2),
+            3: FlexColumnWidth(1),
+          },
           children: [
-            Flexible(child: Text(
-              "#${recording.id}",
-              style: TextStyle(
-                fontSize: 60,
-                color: Colors.grey.shade500,
-              ),
-            )),
-            Flexible(
-              flex: 2,
-              child: Center(child: Text(
-                "Run: ${recording.runNumber}",
-                style: const TextStyle(fontSize: 20),
-              )),
+            TableRow(
+              children: [
+                Text("#${recording.id}", style: const TextStyle(fontSize: 21)),
+                Text(
+                  "Line ${recording.lineNumber}",
+                  style: const TextStyle(fontSize: 18),
+                  textAlign: TextAlign.end,
+                ),
+                IconButton(
+                  onPressed: _wrapWithNotifier(onEdit),
+                  padding: const EdgeInsets.all(6.0),
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.edit),
+                ),
+                IconButton(
+                  onPressed: _wrapWithNotifier(onDelete),
+                  padding: const EdgeInsets.all(6.0),
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.delete),
+                ),
+              ],
             ),
-            Flexible(
-              flex: 2,
-              child: Center(
-                child: ValueListenableBuilder<bool>(
-                  valueListenable: _buttonsLoadingNotifier,
-                  builder: (context, buttonsLoading, _) {
-                    if (buttonsLoading) {
-                      return const CircularProgressIndicator();
-                    }
-                    return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            onPressed: _wrapWithNotifier(onExport),
-                            padding: const EdgeInsets.all(6.0),
-                            constraints: const BoxConstraints(),
-                            icon: const Icon(Icons.save_alt),
-                          ),
-                          IconButton(
-                            onPressed: _wrapWithNotifier(onDelete),
-                            padding: const EdgeInsets.all(6.0),
-                            constraints: const BoxConstraints(),
-                            icon: const Icon(Icons.delete),
-                          ),
-                          IconButton(
-                            onPressed: recording.isUploaded ? null : _wrapWithNotifier(onUpload),
-                            padding: const EdgeInsets.all(6.0),
-                            constraints: const BoxConstraints(),
-                            icon: recording.isUploaded ? const Icon(Icons.done) : const Icon(Icons.upload),
-                          ),
-                          IconButton(
-                            onPressed: _wrapWithNotifier(onEdit),
-                            padding: const EdgeInsets.all(6.0),
-                            constraints: const BoxConstraints(),
-                            icon: const Icon(Icons.edit),
-                          ),
-                        ]
-                    );
-                  },
-                )
-              )
-            )
-          ]
-        )
+            TableRow(
+              children: [
+                const Offstage(),
+                Text(
+                  "Run ${recording.runNumber}",
+                  style: const TextStyle(fontSize: 18),
+                  textAlign: TextAlign.end,
+                ),
+                IconButton(
+                  onPressed: _wrapWithNotifier(onExport),
+                  padding: const EdgeInsets.all(6.0),
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.save_alt),
+                ),
+                IconButton(
+                  onPressed: recording.isUploaded ? null : _wrapWithNotifier(onUpload),
+                  padding: const EdgeInsets.all(6.0),
+                  constraints: const BoxConstraints(),
+                  icon: recording.isUploaded ? const Icon(Icons.done) : const Icon(Icons.upload),
+                ),
+              ],
+            ),
+          ],
+        ),
       ]),
     );
   }
