@@ -30,7 +30,11 @@ void main() async {
           id INTEGER PRIMARY KEY,
           line_number INTEGER,
           run_number INTEGER,
-          is_uploaded BOOLEAN NOT NULL CHECK (is_uploaded IN (0, 1)) DEFAULT 0
+          is_uploaded BOOLEAN NOT NULL CHECK (is_uploaded IN (0, 1)) DEFAULT 0,
+          start_cord_id INTEGER,
+          end_cord_id INTEGER,
+          FOREIGN KEY (start_cord_id, end_cord_id) REFERENCES cords (id, id)
+            ON UPDATE CASCADE
         );
       ''');
 

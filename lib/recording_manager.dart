@@ -243,8 +243,8 @@ Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording)
       extensions: {
         "line": "${recording.lineNumber}",
         "run": "${recording.runNumber}",
-        "start": recording.start.toIso8601String(),
-        "stop": recording.stop.toIso8601String(),
+        "start": recording.totalStart.toIso8601String(),
+        "stop": recording.totalEnd.toIso8601String(),
       },
     )
     ..creator = "Stasi for ${io.Platform.operatingSystem} - https://github.com/dump-dvb/stasi"

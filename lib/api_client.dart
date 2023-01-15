@@ -75,8 +75,8 @@ class ApiClient {
     final timesJson = {
       "gpx_id": jsonDecode(await gpxResponse.stream.bytesToString())["gpx_id"],
       "vehicles": [{
-        "start": recording.start.toIso8601String(),
-        "stop": recording.stop.toIso8601String(),
+        "start": recording.totalStart.toIso8601String(),
+        "stop": recording.totalEnd.toIso8601String(),
         "line": recording.lineNumber,
         "run": recording.runNumber,
         "region": 0,

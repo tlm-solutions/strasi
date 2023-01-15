@@ -34,7 +34,22 @@ class _RecordingEditorState extends State<RecordingEditor> {
 
             final points = snapshot.data!;
 
-            return _RecordingEditorControl(points: points);
+            return _RecordingEditorControl(
+              points: points,
+              onSaveAndExit: (startCordId, endCordId) async {
+                final db = await widget.database;
+
+                await db.update(
+                  "recordings",
+                  {
+                    "start_cord_id": startCordId,
+                    "end_cord_id": endCordId,
+                  },
+                  where: "id = ?",
+                  whereArgs: [widget.recording.id],
+                );
+              },
+            );
           }
         )
       ],
@@ -61,20 +76,24 @@ class _RecordingEditorControl extends StatefulWidget {
   const _RecordingEditorControl({
     Key? key,
     required this.points,
+    required this.onSaveAndExit,
   }) : super(key: key);
 
   final Map<DateTime, LatLng> points;
+  final Future<void> Function(int startCordId, int endCordId) onSaveAndExit;
 
   @override
   State<StatefulWidget> createState() => _RecordingEditorControlState();
 }
 
 class _RecordingEditorControlState extends State<_RecordingEditorControl> {
-  late List<LatLng> _pointList;
+  late int _startPointList;
+  late int _endPointList;
 
   @override
   void initState() {
-    _pointList = widget.points.values.toList();
+    _startPointList = 0;
+    _endPointList = widget.points.values.length - 1;
     super.initState();
   }
 
@@ -84,16 +103,29 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
       children: [
         Flexible(
           flex: 9,
-          child: _RecordingEditorMap(pointList: _pointList),
+          child: _RecordingEditorMap(
+            pointList: widget.points.values.toList().sublist(
+              _startPointList,
+              _endPointList,
+            ),
+          ),
         ),
         Flexible(
           flex: 1,
           child: _RecordingEditorSlider(
             timeList: widget.points.keys.toList(),
-            onChanged: (List<DateTime> newTimeList) {
+            onChanged: (int start, int end) {
               setState(() {
-                _pointList = newTimeList.map((dateTime) => widget.points[dateTime]!).toList();
+                _startPointList = start;
+                _endPointList = end;
               });
+            },
+          ),
+        ),
+        Flexible(
+          child: _RecordingEditorButtons(
+            onSaveAndExit: () async {
+              await widget.onSaveAndExit(_startPointList, _endPointList);
             },
           ),
         ),
@@ -141,12 +173,12 @@ class _RecordingEditorSlider extends StatefulWidget {
   const _RecordingEditorSlider({
     Key? key,
     required this.timeList,
-    required ValueChanged<List<DateTime>> onChanged,
+    required Function(int start, int end) onChanged,
   }) :  _onChanged = onChanged,
         super(key: key);
 
   final List<DateTime> timeList;
-  final ValueChanged<List<DateTime>>  _onChanged;
+  final void Function(int start, int end) _onChanged;
 
   @override
   State<StatefulWidget> createState() => _RecordingEditorSliderState();
@@ -165,17 +197,16 @@ class _RecordingEditorSliderState extends State<_RecordingEditorSlider> {
   Widget build(BuildContext context) {
     return RangeSlider(
       onChanged: (RangeValues values) {
+        // prevent the selection of only one cord
+        if (values.end - values.start == 0) return;
+
         setState(() {
-          // prevent the selection of only one cord
-          if (values.end - values.start > 0) {
-            _timeRange = values;
-          }
+          _timeRange = values;
         });
+
         widget._onChanged(
-          widget.timeList.sublist(
-            _timeRange.start.toInt(),
-            _timeRange.end.toInt() + 1,
-          ),
+          _timeRange.start.toInt(),
+          _timeRange.end.toInt() + 1,
         );
       },
       divisions: widget.timeList.length - 1,
@@ -188,4 +219,24 @@ class _RecordingEditorSliderState extends State<_RecordingEditorSlider> {
       ),
     );
   }
+}
+
+class _RecordingEditorButtons extends StatelessWidget {
+  const _RecordingEditorButtons({
+    Key? key,
+    required this.onSaveAndExit,
+  }) : super(key: key);
+
+  final VoidCallback onSaveAndExit;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      ElevatedButton(
+        onPressed: onSaveAndExit,
+        child: const Text("Save & Exit"),
+      ),
+    ],
+  );
+
 }
