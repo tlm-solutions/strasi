@@ -36,22 +36,30 @@ class _RecordingEditorState extends State<RecordingEditor> {
 
             return _RecordingEditorControl(
               points: points,
-              onSaveAndExit: (startCordId, endCordId) async {
+              onSaveAndExit: (startTime, endTime) async {
                 final db = await widget.database;
 
-                await db.update(
-                  "recordings",
-                  {
-                    "start_cord_id": startCordId,
-                    "end_cord_id": endCordId,
-                  },
-                  where: "id = ?",
-                  whereArgs: [widget.recording.id],
-                );
+                await db.rawUpdate('''
+                  UPDATE recordings
+                  SET 
+                    start_cord_id = (
+                      SELECT cords.id 
+                      FROM cords 
+                      WHERE NOT ? > cords.time
+                      ORDER BY cords.time
+                    ),
+                    end_cord_id = (
+                      SELECT cords.id
+                      FROM cords
+                      WHERE NOT ? < cords.time
+                      ORDER BY cords.time DESC
+                    )
+                  WHERE id = ?;
+                ''', [startTime, endTime, widget.recording.id]);
               },
             );
-          }
-        )
+          },
+        ),
       ],
     );
   }
@@ -80,20 +88,20 @@ class _RecordingEditorControl extends StatefulWidget {
   }) : super(key: key);
 
   final Map<DateTime, LatLng> points;
-  final Future<void> Function(int startCordId, int endCordId) onSaveAndExit;
+  final Future<void> Function(DateTime startTime, DateTime endTime) onSaveAndExit;
 
   @override
   State<StatefulWidget> createState() => _RecordingEditorControlState();
 }
 
 class _RecordingEditorControlState extends State<_RecordingEditorControl> {
-  late int _startPointList;
-  late int _endPointList;
+  late DateTime _startTime;
+  late DateTime _endTime;
 
   @override
   void initState() {
-    _startPointList = 0;
-    _endPointList = widget.points.values.length - 1;
+    _startTime = widget.points.keys.first;
+    _endTime = widget.points.keys.last;
     super.initState();
   }
 
@@ -104,20 +112,21 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
         Flexible(
           flex: 9,
           child: _RecordingEditorMap(
-            pointList: widget.points.values.toList().sublist(
-              _startPointList,
-              _endPointList,
-            ),
+            pointList: [
+              for (final time in widget.points.keys)
+                if (_startTime.compareTo(time) <= 0 && _endTime.compareTo(time) >= 0)
+                  widget.points[time]!
+            ],
           ),
         ),
         Flexible(
           flex: 1,
           child: _RecordingEditorSlider(
             timeList: widget.points.keys.toList(),
-            onChanged: (int start, int end) {
+            onChanged: (startTime, endTime) {
               setState(() {
-                _startPointList = start;
-                _endPointList = end;
+                _startTime = startTime;
+                _endTime = endTime;
               });
             },
           ),
@@ -125,7 +134,7 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
         Flexible(
           child: _RecordingEditorButtons(
             onSaveAndExit: () async {
-              await widget.onSaveAndExit(_startPointList, _endPointList);
+              await widget.onSaveAndExit(_startTime, _endTime);
             },
           ),
         ),
@@ -173,12 +182,12 @@ class _RecordingEditorSlider extends StatefulWidget {
   const _RecordingEditorSlider({
     Key? key,
     required this.timeList,
-    required Function(int start, int end) onChanged,
+    required Function(DateTime startTime, DateTime endTime) onChanged,
   }) :  _onChanged = onChanged,
         super(key: key);
 
   final List<DateTime> timeList;
-  final void Function(int start, int end) _onChanged;
+  final void Function(DateTime startTime, DateTime endTime) _onChanged;
 
   @override
   State<StatefulWidget> createState() => _RecordingEditorSliderState();
@@ -205,8 +214,8 @@ class _RecordingEditorSliderState extends State<_RecordingEditorSlider> {
         });
 
         widget._onChanged(
-          _timeRange.start.toInt(),
-          _timeRange.end.toInt() + 1,
+          widget.timeList[_timeRange.start.toInt()],
+          widget.timeList[_timeRange.end.toInt()],
         );
       },
       divisions: widget.timeList.length - 1,
