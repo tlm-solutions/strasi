@@ -86,8 +86,13 @@ class _RecordingManagerState extends State<RecordingManager> {
                           builder: (context) => RecordingEditorRoute(
                               database: widget.database,
                               recording: recordings[index],
-                          )
-                      ));
+                          ),
+                      )).then((_) {
+                        // To reload the recording after it has been edited.
+                        // This kinda sucks but i've made too many
+                        // poor design choices.
+                        setState(() {});
+                      });
                     },
                   ),
                   separatorBuilder: (context, index) => const Divider(),

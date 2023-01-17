@@ -139,6 +139,8 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
         Flexible(
           flex: 1,
           child: _RecordingEditorSlider(
+            startTime: _startTime,
+            endTime: _endTime,
             timeList: widget.points.keys.toList(),
             onChanged: (startTime, endTime) {
               setState(() {
@@ -195,29 +197,20 @@ class _RecordingEditorMap extends StatelessWidget {
   }
 }
 
-class _RecordingEditorSlider extends StatefulWidget {
+
+class _RecordingEditorSlider extends StatelessWidget {
   const _RecordingEditorSlider({
     Key? key,
     required this.timeList,
-    required Function(DateTime startTime, DateTime endTime) onChanged,
-  }) :  _onChanged = onChanged,
-        super(key: key);
+    required this.startTime,
+    required this.endTime,
+    required this.onChanged,
+  }) : super(key: key);
 
   final List<DateTime> timeList;
-  final void Function(DateTime startTime, DateTime endTime) _onChanged;
-
-  @override
-  State<StatefulWidget> createState() => _RecordingEditorSliderState();
-}
-
-class _RecordingEditorSliderState extends State<_RecordingEditorSlider> {
-  late RangeValues _timeRange;
-
-  @override
-  void initState() {
-    _timeRange = RangeValues(0, widget.timeList.length - 1);
-    super.initState();
-  }
+  final DateTime startTime;
+  final DateTime endTime;
+  final void Function(DateTime startTime, DateTime endTime) onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -226,22 +219,21 @@ class _RecordingEditorSliderState extends State<_RecordingEditorSlider> {
         // prevent the selection of only one cord
         if (values.end - values.start == 0) return;
 
-        setState(() {
-          _timeRange = values;
-        });
-
-        widget._onChanged(
-          widget.timeList[_timeRange.start.toInt()],
-          widget.timeList[_timeRange.end.toInt()],
+        onChanged(
+          timeList[values.start.toInt()],
+          timeList[values.end.toInt()],
         );
       },
-      divisions: widget.timeList.length - 1,
-      values: _timeRange,
+      divisions: timeList.length - 1,
+      values: RangeValues(
+        timeList.indexOf(startTime).toDouble(),
+        timeList.indexOf(endTime).toDouble(),
+      ),
       min: 0,
-      max: widget.timeList.length - 1,
+      max: timeList.length - 1,
       labels: RangeLabels(
-        widget.timeList[_timeRange.start.toInt()].toIso8601String(),
-        widget.timeList[_timeRange.end.toInt()].toIso8601String(),
+        startTime.toString(),
+        endTime.toString(),
       ),
     );
   }
