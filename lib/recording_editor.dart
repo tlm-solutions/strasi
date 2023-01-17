@@ -11,6 +11,7 @@ class RecordingEditor extends StatefulWidget {
     required this.database,
     required this.recording,
   }) : super(key: key);
+
   final Future<Database> database;
   final Recording recording;
 
@@ -34,8 +35,13 @@ class _RecordingEditorState extends State<RecordingEditor> {
 
             final points = snapshot.data!;
 
+            final initialStartTime = widget.recording.start ?? points.keys.first;
+            final initialEndTime = widget.recording.end ?? points.keys.last;
+
             return _RecordingEditorControl(
               points: points,
+              initialStartTime: initialStartTime,
+              initialEndTime: initialEndTime,
               onSaveAndExit: (startTime, endTime) async {
                 final db = await widget.database;
 
@@ -45,17 +51,24 @@ class _RecordingEditorState extends State<RecordingEditor> {
                     start_cord_id = (
                       SELECT cords.id 
                       FROM cords 
-                      WHERE NOT ? > cords.time
+                      WHERE NOT DATETIME(?) > cords.time
                       ORDER BY cords.time
                     ),
                     end_cord_id = (
                       SELECT cords.id
                       FROM cords
-                      WHERE NOT ? < cords.time
+                      WHERE NOT DATETIME(?) < cords.time
                       ORDER BY cords.time DESC
                     )
                   WHERE id = ?;
-                ''', [startTime, endTime, widget.recording.id]);
+                ''', [
+                  startTime.toString(),
+                  endTime.toString(),
+                  widget.recording.id,
+                ]);
+
+                if (!mounted) return;
+                Navigator.pop(context);
               },
             );
           },
@@ -84,10 +97,14 @@ class _RecordingEditorControl extends StatefulWidget {
   const _RecordingEditorControl({
     Key? key,
     required this.points,
+    required this.initialStartTime,
+    required this.initialEndTime,
     required this.onSaveAndExit,
   }) : super(key: key);
 
   final Map<DateTime, LatLng> points;
+  final DateTime initialStartTime;
+  final DateTime initialEndTime;
   final Future<void> Function(DateTime startTime, DateTime endTime) onSaveAndExit;
 
   @override
@@ -100,8 +117,8 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
 
   @override
   void initState() {
-    _startTime = widget.points.keys.first;
-    _endTime = widget.points.keys.last;
+    _startTime = widget.initialStartTime;
+    _endTime = widget.initialEndTime;
     super.initState();
   }
 
@@ -240,6 +257,7 @@ class _RecordingEditorButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
+    mainAxisAlignment: MainAxisAlignment.center,
     children: [
       ElevatedButton(
         onPressed: onSaveAndExit,
@@ -247,5 +265,4 @@ class _RecordingEditorButtons extends StatelessWidget {
       ),
     ],
   );
-
 }

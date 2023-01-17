@@ -32,7 +32,7 @@ void main() async {
           run_number INTEGER,
           is_uploaded BOOLEAN NOT NULL CHECK (is_uploaded IN (0, 1)) DEFAULT 0,
           start_cord_id INTEGER,
-          end_cord_id INTEGER,
+          end_cord_id INTEGER
         );
       ''');
 
