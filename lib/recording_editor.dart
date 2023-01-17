@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:stasi/database_manager.dart';
+import 'package:stasi/db/database_bloc.dart';
+
+import 'model/recording.dart';
 
 
 class RecordingEditor extends StatefulWidget {
   const RecordingEditor({
     Key? key,
-    required this.database,
+    required this.databaseBloc,
     required this.recording,
   }) : super(key: key);
 
-  final Future<Database> database;
+  final DatabaseBloc databaseBloc;
   final Recording recording;
 
   @override
@@ -43,9 +44,7 @@ class _RecordingEditorState extends State<RecordingEditor> {
               initialStartTime: initialStartTime,
               initialEndTime: initialEndTime,
               onSaveAndExit: (startTime, endTime) async {
-                final databaseManager = DatabaseManager(widget.database);
-
-                await databaseManager.setRecordingBounds(
+                await widget.databaseBloc.setRecordingBounds(
                   widget.recording.id,
                   startTime: startTime,
                   endTime: endTime,
@@ -62,10 +61,8 @@ class _RecordingEditorState extends State<RecordingEditor> {
   }
 
   Future<Map<DateTime, LatLng>> _getPointsFromRecord() async {
-    final databaseManager = DatabaseManager(widget.database);
-
     return {
-      for (final coordinate in await databaseManager.getCoordinates(widget.recording.id))
+      for (final coordinate in await widget.databaseBloc.getCoordinates(widget.recording.id))
         coordinate.time: LatLng(coordinate.latitude, coordinate.longitude)
     };
   }

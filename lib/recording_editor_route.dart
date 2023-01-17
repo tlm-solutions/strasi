@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 
-import 'database_manager.dart';
+import 'db/database_bloc.dart';
+import 'model/recording.dart';
 import 'recording_editor.dart';
+
 
 class RecordingEditorRoute extends StatelessWidget {
   const RecordingEditorRoute({
     Key? key,
-    required this.database,
+    required this.databaseBloc,
     required this.recording
   }) : super(key: key);
 
-  final Future<Database> database;
+  final DatabaseBloc databaseBloc;
   final Recording recording;
 
   @override
@@ -21,7 +22,7 @@ class RecordingEditorRoute extends StatelessWidget {
         title: Text("Edit route ${recording.id}"),
       ),
       body: RecordingEditor(
-        database: database,
+        databaseBloc: databaseBloc,
         recording: recording,
       ),
     );

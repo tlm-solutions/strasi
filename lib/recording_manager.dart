@@ -6,22 +6,22 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:provider/provider.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:gpx/gpx.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
-import 'package:stasi/database_manager.dart';
+import 'package:stasi/db/database_bloc.dart';
 
 import 'recording_editor_route.dart';
 import 'running_recording.dart';
 import 'theme.dart';
 import 'api_client.dart';
+import 'model/recording.dart';
 
 
 class RecordingManager extends StatefulWidget {
-  final Future<Database> database;
+  final DatabaseBloc databaseBloc;
 
-  const RecordingManager({Key? key, required this.database}) : super(key: key);
+  const RecordingManager({Key? key, required this.databaseBloc}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _RecordingManagerState();
@@ -30,8 +30,9 @@ class RecordingManager extends StatefulWidget {
 class _RecordingManagerState extends State<RecordingManager> {
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: DatabaseManager(widget.database).getRecordings(),
+    widget.databaseBloc.getRecordings();
+    return StreamBuilder(
+        stream: widget.databaseBloc.recordings,
         builder: (context, AsyncSnapshot<List<Recording>> snapshot) {
           if (snapshot.hasError) {
             throw snapshot.error!;
@@ -52,7 +53,7 @@ class _RecordingManagerState extends State<RecordingManager> {
                       final scaffoldMessenger = ScaffoldMessenger.of(context);
 
                       final gpxPath = await _exportCoordinatesToFile(
-                          widget.database, recordings[index]
+                          widget.databaseBloc, recordings[index]
                       );
 
                       if (kDebugMode) print("GPX-Path: $gpxPath");
@@ -62,13 +63,12 @@ class _RecordingManagerState extends State<RecordingManager> {
                       ));
                     },
                     onDelete: () async {
-                      await _deleteRecording(widget.database, recordings[index]);
-                      setState(() {});
+                      await widget.databaseBloc.deleteRecording(recordings[index].id);
                     },
                     onUpload: () async {
                       final scaffoldMessenger = ScaffoldMessenger.of(context);
                       try {
-                        await _uploadRecording(widget.database, recordings[index]);
+                        await _uploadRecording(widget.databaseBloc, recordings[index]);
                       } on http.ClientException {
                         scaffoldMessenger.showSnackBar(const SnackBar(
                             content: Text("We couldn't connect to the KGB server. Is your Internet working?")
@@ -78,21 +78,15 @@ class _RecordingManagerState extends State<RecordingManager> {
                       scaffoldMessenger.showSnackBar(const SnackBar(
                           content: Text("Uploaded!")
                       ));
-                      await _markUploadDone(widget.database, recordings[index]);
-                      setState(() {});
+                      await widget.databaseBloc.markRecordingUploadDone(recordings[index].id);
                     },
                     onEdit: () async {
                       Navigator.push(context, MaterialPageRoute(
                           builder: (context) => RecordingEditorRoute(
-                              database: widget.database,
+                              databaseBloc: widget.databaseBloc,
                               recording: recordings[index],
                           ),
-                      )).then((_) {
-                        // To reload the recording after it has been edited.
-                        // This kinda sucks but i've made too many
-                        // poor design choices.
-                        setState(() {});
-                      });
+                      ));
                     },
                   ),
                   separatorBuilder: (context, index) => const Divider(),
@@ -102,7 +96,7 @@ class _RecordingManagerState extends State<RecordingManager> {
           }
 
           return const Offstage();
-        }
+        },
     );
 
   }
@@ -236,9 +230,7 @@ class _OverflowingText extends StatelessWidget {
   }
 }
 
-Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording) async {
-  final databaseManager = DatabaseManager(database);
-
+Future<Gpx> _getCoordinatesAsGpx(DatabaseBloc databaseBloc, Recording recording) async {
   final gpx = Gpx()
     ..metadata = Metadata(
       name: DateFormat("y-M-d_H-m-s").format(DateTime.now().toUtc()),
@@ -256,7 +248,7 @@ Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording)
     ..version = "1.1"
     ..trks = [Trk(
       trksegs: [Trkseg(
-        trkpts: (await databaseManager.getCoordinatesWithBounds(recording.id))
+        trkpts: (await databaseBloc.getCoordinatesWithBounds(recording.id))
             .map((coordinate) => Wpt(
             lat: coordinate.latitude,
             lon: coordinate.longitude,
@@ -270,8 +262,8 @@ Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording)
   return gpx;
 }
 
-Future<String> _exportCoordinatesToFile(Future<Database> database, Recording recording) async {
-  final gpxData = await _getCoordinatesAsGpx(database, recording);
+Future<String> _exportCoordinatesToFile(DatabaseBloc databaseBloc, Recording recording) async {
+  final gpxData = await _getCoordinatesAsGpx(databaseBloc, recording);
 
   // This should be the start or stop time
   final secondsEpoch = (DateTime.now().toUtc().millisecondsSinceEpoch / 1000).round();
@@ -291,25 +283,8 @@ Future<String> _exportCoordinatesToFile(Future<Database> database, Recording rec
   return gpxPath;
 }
 
-Future<void> _deleteRecording(Future<Database> database, Recording recording) async {
-  final databaseManager = DatabaseManager(database);
-
-  // cords should just be deleted via foreign key but that doesnt work
-  //
-  // or does it? i don't know. this a classic example of a comment
-  // where we dont know if it is correct anymore.
-  await databaseManager.deleteRecording(recording.id);
-}
-
-
-Future<void> _uploadRecording(Future<Database> database, Recording recording) async {
-  final gpx = await _getCoordinatesAsGpx(database, recording);
+Future<void> _uploadRecording(DatabaseBloc databaseBloc, Recording recording) async {
+  final gpx = await _getCoordinatesAsGpx(databaseBloc, recording);
 
   await ApiClient().sendGpx(gpx, recording);
-}
-
-Future<void> _markUploadDone(Future<Database> database, Recording recording) async {
-  final databaseManager = DatabaseManager(database);
-
-  await databaseManager.markRecordingUploadDone(recording.id);
 }

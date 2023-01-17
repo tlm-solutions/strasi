@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:background_location/background_location.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:stasi/database_manager.dart';
 import 'package:stasi/running_recording.dart';
+
+import 'db/database_bloc.dart';
 
 
 class VehicleSelection extends StatefulWidget {
-  final Future<Database> database;
+  final DatabaseBloc databaseBloc;
 
-  const VehicleSelection({Key? key, required this.database}) : super(key: key);
+  const VehicleSelection({Key? key, required this.databaseBloc}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _VehicleSelectionState();
@@ -77,8 +77,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                     return;
                   }
 
-                  final databaseManager = DatabaseManager(widget.database);
-                  final recordingId = await databaseManager.createRecording(
+                  final recordingId = await widget.databaseBloc.createRecording(
                     runNumber: runNumber,
                     lineNumber: lineNumber,
                   );
@@ -94,7 +93,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                   BackgroundLocation.startLocationService();
 
                   BackgroundLocation.getLocationUpdates((location) async {
-                    await databaseManager.createCoordinate(recordingId,
+                    await widget.databaseBloc.createCoordinate(recordingId,
                       latitude: location.latitude!,
                       longitude: location.longitude!,
                       altitude: location.altitude!,
@@ -127,9 +126,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
   }
 
   Future<void> _updateRecording(int recordingId) async {
-    final databaseManager = DatabaseManager(widget.database);
-
-    await databaseManager.setRecordingRunAndLineNumber(
+    await widget.databaseBloc.setRecordingRunAndLineNumber(
         recordingId,
         runNumber: runNumber,
         lineNumber: lineNumber,

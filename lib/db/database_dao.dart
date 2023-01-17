@@ -1,55 +1,13 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:stasi/db/database_provider.dart';
+import 'package:stasi/model/recording.dart';
+import 'package:stasi/model/coordinate.dart';
 
 
-class Recording {
-  Recording({
-    required this.id,
-    required this.lineNumber,
-    required this.runNumber,
-    required this.isUploaded,
-    required this.start,
-    required this.end,
-    required this.totalStart,
-    required this.totalEnd,
-  });
-
-  int id;
-  int? lineNumber;
-  int? runNumber;
-  bool isUploaded;
-  DateTime? start;
-  DateTime? end;
-  DateTime totalStart;
-  DateTime totalEnd;
-}
-
-class Coordinate {
-  Coordinate({
-    required this.id,
-    required this.time,
-    required this.latitude,
-    required this.longitude,
-    required this.altitude,
-    required this.speed,
-    required this.recordingId,
-  });
-
-  final int id;
-  final DateTime time;
-  final double latitude;
-  final double longitude;
-  final double altitude;
-  final double speed;
-  final int recordingId;
-}
-
-
-class DatabaseManager {
-  DatabaseManager(Future<Database> database) : _database = database;
-  final Future<Database> _database;
+class DatabaseDao {
+  final dbProvider = DatabaseProvider.dbProvider;
 
   Future<List<Recording>> getRecordings() async {
-    final db = await _database;
+    final db = await dbProvider.db;
 
     final recordingDict = await db.rawQuery('''
       SELECT rec.id, rec.line_number, rec.run_number, rec.is_uploaded,
@@ -77,7 +35,7 @@ class DatabaseManager {
   }
 
   Future<int> createRecording({int? runNumber, int? lineNumber}) async {
-    final db = await _database;
+    final db = await dbProvider.db;
 
     final recordingId = await db.insert("recordings", {
       "line_number": lineNumber,
@@ -87,19 +45,19 @@ class DatabaseManager {
     return recordingId;
   }
 
-  Future<void> deleteRecording(int recordingId) async {
-    final db = await _database;
+  Future<int> deleteRecording(int recordingId) async {
+    final db = await dbProvider.db;
 
-    await db.delete("recordings", where: "id = ?", whereArgs: [recordingId]);
+    return await db.delete("recordings", where: "id = ?", whereArgs: [recordingId]);
   }
 
-  Future<void> setRecordingRunAndLineNumber(int recordingId, {
+  Future<int> setRecordingRunAndLineNumber(int recordingId, {
     required int? runNumber,
     required int? lineNumber,
   }) async {
-    final db = await _database;
+    final db = await dbProvider.db;
 
-    await db.update(
+    return await db.update(
       "recordings",
       {"run_number": runNumber, "line_number": lineNumber},
       where: "id = ?",
@@ -107,13 +65,13 @@ class DatabaseManager {
     );
   }
 
-  Future<void> setRecordingBounds(int recordingId, {
+  Future<int> setRecordingBounds(int recordingId, {
     required DateTime startTime,
     required DateTime endTime,
   }) async {
-    final db = await _database;
+    final db = await dbProvider.db;
 
-    await db.rawUpdate(
+    return await db.rawUpdate(
         '''
         UPDATE recordings
         SET 
@@ -139,14 +97,14 @@ class DatabaseManager {
     );
   }
 
-  Future<void> markRecordingUploadDone(int recordingId) async {
-    final db = await _database;
+  Future<int> markRecordingUploadDone(int recordingId) async {
+    final db = await dbProvider.db;
 
-    await db.update(
-        "recordings",
-        {"is_uploaded": true},
-        where: "id = ?",
-        whereArgs: [recordingId],
+    return await db.update(
+      "recordings",
+      {"is_uploaded": true},
+      where: "id = ?",
+      whereArgs: [recordingId],
     );
   }
 
@@ -170,7 +128,7 @@ class DatabaseManager {
   }
 
   Future<List<Coordinate>> getCoordinates(int recordingId) async {
-    final db = await _database;
+    final db = await dbProvider.db;
 
     return _cordMapListToCoordinates(await db.query(
       "cords",
@@ -183,18 +141,18 @@ class DatabaseManager {
   }
 
   Future<List<Coordinate>> getCoordinatesWithBounds(int recordingId) async {
-    final db = await _database;
+    final db = await dbProvider.db;
 
     return _cordMapListToCoordinates(await db.rawQuery(
-      """
-      SELECT
-        cords.id, cords.time, cords.latitude, cords.longitude, 
-        cords.altitude, cords.speed, cords.recording_id
-      FROM cords
-      LEFT JOIN recordings AS rec ON cords.recording_id = rec.id
-      WHERE
-        rec.id = ? 
-        AND cords.id BETWEEN rec.start_cord_id AND rec.end_cord_id;
+        """
+          SELECT
+            cords.id, cords.time, cords.latitude, cords.longitude, 
+            cords.altitude, cords.speed, cords.recording_id
+          FROM cords
+          LEFT JOIN recordings AS rec ON cords.recording_id = rec.id
+          WHERE
+            rec.id = ? 
+            AND cords.id BETWEEN rec.start_cord_id AND rec.end_cord_id;
       """, [recordingId]
     ));
   }
@@ -205,7 +163,7 @@ class DatabaseManager {
     required double altitude,
     required double speed,
   }) async {
-    final db = await _database;
+    final db = await dbProvider.db;
 
     final coordinateId = await db.insert("cords", {
       "latitude": latitude,
