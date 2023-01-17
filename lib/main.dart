@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'package:stasi/db/database_bloc.dart';
-import 'package:stasi/recording_manager.dart';
-import 'package:stasi/running_recording.dart';
-import 'package:stasi/theme.dart';
-import 'package:stasi/vehicle_selection.dart';
+import 'package:stasi/pages/running_recording.dart';
+import 'package:stasi/util/theme.dart';
+import 'package:stasi/pages/recording_manager.dart';
+import 'package:stasi/pages/vehicle_selection.dart';
 
 
 void main() async {

@@ -3,7 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:stasi/db/database_bloc.dart';
 
-import 'model/recording.dart';
+import '../model/recording.dart';
 
 
 class RecordingEditor extends StatefulWidget {

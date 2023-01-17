@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'db/database_bloc.dart';
-import 'model/recording.dart';
-import 'recording_editor.dart';
+import '../db/database_bloc.dart';
+import '../model/recording.dart';
+import '../pages/recording_editor.dart';
 
 
 class RecordingEditorRoute extends StatelessWidget {
