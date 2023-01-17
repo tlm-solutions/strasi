@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:gpx/gpx.dart';
 
-import 'recording.dart';
+import 'database_manager.dart';
 
 
 class LoginData {

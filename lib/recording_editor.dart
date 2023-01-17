@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:stasi/database_manager.dart';
 
-import 'recording.dart';
 
 class RecordingEditor extends StatefulWidget {
   const RecordingEditor({
@@ -43,29 +43,13 @@ class _RecordingEditorState extends State<RecordingEditor> {
               initialStartTime: initialStartTime,
               initialEndTime: initialEndTime,
               onSaveAndExit: (startTime, endTime) async {
-                final db = await widget.database;
+                final databaseManager = DatabaseManager(widget.database);
 
-                await db.rawUpdate('''
-                  UPDATE recordings
-                  SET 
-                    start_cord_id = (
-                      SELECT cords.id 
-                      FROM cords 
-                      WHERE NOT DATETIME(?) > cords.time
-                      ORDER BY cords.time
-                    ),
-                    end_cord_id = (
-                      SELECT cords.id
-                      FROM cords
-                      WHERE NOT DATETIME(?) < cords.time
-                      ORDER BY cords.time DESC
-                    )
-                  WHERE id = ?;
-                ''', [
-                  startTime.toString(),
-                  endTime.toString(),
+                await databaseManager.setRecordingBounds(
                   widget.recording.id,
-                ]);
+                  startTime: startTime,
+                  endTime: endTime,
+                );
 
                 if (!mounted) return;
                 Navigator.pop(context);
@@ -78,17 +62,12 @@ class _RecordingEditorState extends State<RecordingEditor> {
   }
 
   Future<Map<DateTime, LatLng>> _getPointsFromRecord() async {
-    final db = await widget.database;
+    final databaseManager = DatabaseManager(widget.database);
 
-    return { for (var dbCord in await db.query(
-        "cords",
-        columns: ["latitude", "longitude", "time", "recording_id"],
-        where: "recording_id = ?",
-        whereArgs: [widget.recording.id],
-      )) DateTime.parse(dbCord["time"] as String) : LatLng(
-        dbCord["latitude"] as double,
-        dbCord["longitude"] as double,
-      ) };
+    return {
+      for (final coordinate in await databaseManager.getCoordinates(widget.recording.id))
+        coordinate.time: LatLng(coordinate.latitude, coordinate.longitude)
+    };
   }
 
 }

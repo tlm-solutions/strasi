@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:background_location/background_location.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:stasi/database_manager.dart';
 import 'package:stasi/running_recording.dart';
 
 
@@ -76,11 +77,11 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                     return;
                   }
 
-                  final db = await widget.database;
-                  final recordingId = await db.insert("recordings", {
-                    "line_number": lineNumber,
-                    "run_number": runNumber,
-                  });
+                  final databaseManager = DatabaseManager(widget.database);
+                  final recordingId = await databaseManager.createRecording(
+                    runNumber: runNumber,
+                    lineNumber: lineNumber,
+                  );
 
                   recording.setRecordingId(recordingId);
 
@@ -93,17 +94,16 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                   BackgroundLocation.startLocationService();
 
                   BackgroundLocation.getLocationUpdates((location) async {
-                    await db.insert("cords", {
-                      "latitude": location.latitude,
-                      "longitude": location.longitude,
-                      "altitude": location.altitude,
-                      "speed": location.speed,
-                      "recording_id": recordingId,
-                    });
+                    await databaseManager.createCoordinate(recordingId,
+                      latitude: location.latitude!,
+                      longitude: location.longitude!,
+                      altitude: location.altitude!,
+                      speed: location.speed!,
+                    );
                   });
                 },
                 child: started ? const Text("WE'RE DONE HERE!") : const Text("LET'S TRACK"),
-              )
+              ),
             ],
           )
         );
@@ -127,13 +127,12 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
   }
 
   Future<void> _updateRecording(int recordingId) async {
-    final db = await widget.database;
+    final databaseManager = DatabaseManager(widget.database);
 
-    await db.update(
-      "recordings",
-      {"run_number": runNumber, "line_number": lineNumber},
-      where: "id = ?",
-      whereArgs: [recordingId],
+    await databaseManager.setRecordingRunAndLineNumber(
+        recordingId,
+        runNumber: runNumber,
+        lineNumber: lineNumber,
     );
   }
 }

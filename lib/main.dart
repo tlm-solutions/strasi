@@ -51,6 +51,9 @@ void main() async {
         );
       ''');
     },
+    onOpen: (db) async {
+
+    },
     version: 1,
   );
 

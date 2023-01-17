@@ -10,8 +10,8 @@ import 'package:sqflite/sqflite.dart';
 import 'package:gpx/gpx.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:stasi/database_manager.dart';
 
-import 'recording.dart';
 import 'recording_editor_route.dart';
 import 'running_recording.dart';
 import 'theme.dart';
@@ -31,7 +31,7 @@ class _RecordingManagerState extends State<RecordingManager> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: Recording.fromDb(widget.database),
+        future: DatabaseManager(widget.database).getRecordings(),
         builder: (context, AsyncSnapshot<List<Recording>> snapshot) {
           if (snapshot.hasError) {
             throw snapshot.error!;
@@ -237,7 +237,7 @@ class _OverflowingText extends StatelessWidget {
 }
 
 Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording) async {
-  final db = await database;
+  final databaseManager = DatabaseManager(database);
 
   final gpx = Gpx()
     ..metadata = Metadata(
@@ -256,21 +256,13 @@ Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording)
     ..version = "1.1"
     ..trks = [Trk(
       trksegs: [Trkseg(
-        trkpts: (await db.query(
-            "cords",
-            columns: ["recording_id", "latitude", "longitude", "speed", "altitude", "time"],
-            where: "recording_id = ? AND time BETWEEN datetime(?) AND datetime(?)",
-            whereArgs: [
-              recording.id,
-              (recording.start ?? recording.totalStart).toString(),
-              (recording.end ?? recording.totalEnd).toString(),
-            ],
-          )).map((cordMap) => Wpt(
-            lat: cordMap["latitude"] as double,
-            lon: cordMap["longitude"] as double,
-            ele: cordMap["altitude"] as double,
-            time: DateTime.parse(cordMap["time"] as String),
-            extensions: {"speed": '${cordMap["speed"] as double}'},
+        trkpts: (await databaseManager.getCoordinatesWithBounds(recording.id))
+            .map((coordinate) => Wpt(
+            lat: coordinate.latitude,
+            lon: coordinate.longitude,
+            ele: coordinate.altitude,
+            time: coordinate.time,
+            extensions: {"speed": '${coordinate.speed}'},
           )).toList(),
       )]
     )];
@@ -300,10 +292,13 @@ Future<String> _exportCoordinatesToFile(Future<Database> database, Recording rec
 }
 
 Future<void> _deleteRecording(Future<Database> database, Recording recording) async {
-  final db = await database;
+  final databaseManager = DatabaseManager(database);
 
-  // cords should just be deleted via foreign key but that doesnt wok
-  await db.delete("recordings", where: "id = ?", whereArgs: [recording.id]);
+  // cords should just be deleted via foreign key but that doesnt work
+  //
+  // or does it? i don't know. this a classic example of a comment
+  // where we dont know if it is correct anymore.
+  await databaseManager.deleteRecording(recording.id);
 }
 
 
@@ -314,12 +309,7 @@ Future<void> _uploadRecording(Future<Database> database, Recording recording) as
 }
 
 Future<void> _markUploadDone(Future<Database> database, Recording recording) async {
-  final db = await database;
+  final databaseManager = DatabaseManager(database);
 
-  await db.update(
-    "recordings",
-    {"is_uploaded": true},
-    where: "id = ?",
-    whereArgs: [recording.id]
-  );
+  await databaseManager.markRecordingUploadDone(recording.id);
 }

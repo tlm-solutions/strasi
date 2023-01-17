@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 
-import 'recording.dart';
+import 'database_manager.dart';
 import 'recording_editor.dart';
 
 class RecordingEditorRoute extends StatelessWidget {
