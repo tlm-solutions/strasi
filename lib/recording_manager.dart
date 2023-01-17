@@ -259,8 +259,12 @@ Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording)
         trkpts: (await db.query(
             "cords",
             columns: ["recording_id", "latitude", "longitude", "speed", "altitude", "time"],
-            where: "recording_id = ?",
-            whereArgs: [recording.id],
+            where: "recording_id = ? AND time BETWEEN datetime(?) AND datetime(?)",
+            whereArgs: [
+              recording.id,
+              (recording.start ?? recording.totalStart).toString(),
+              (recording.end ?? recording.totalEnd).toString(),
+            ],
           )).map((cordMap) => Wpt(
             lat: cordMap["latitude"] as double,
             lon: cordMap["longitude"] as double,
