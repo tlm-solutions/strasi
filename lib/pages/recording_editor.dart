@@ -278,45 +278,56 @@ class _RecordingEditorButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    // crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       Flexible(
         flex: 1,
-        child: TextFormField(
-          decoration: const InputDecoration(
-            labelText: "line number",
+        /*
+        Extremely stupid SizedBox workaround to get the TextFormField
+        to have the same height as the ElevatedButton.
+         */
+        child: SizedBox(
+          height: 48,
+          child: TextFormField(
+            decoration: const InputDecoration(
+              labelText: "line number",
+              isDense: true,
+            ),
+            controller: _lineNumberController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
-          controller: _lineNumberController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         ),
       ),
       Flexible(
         flex: 1,
-        child: TextFormField(
-          decoration: const InputDecoration(
-            labelText: "run number",
+        child: SizedBox(
+          height: 48,
+          child: TextFormField(
+            decoration: const InputDecoration(
+              labelText: "run number",
+              isDense: true,
+            ),
+            controller: _runNumberController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
-          controller: _runNumberController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         ),
       ),
       Flexible(
         flex: 1,
-        child: ElevatedButton(
-          onPressed: () {
-            final lineNumberContent = _lineNumberController.value.text;
-            final lineNumber = lineNumberContent.isNotEmpty ? int.parse(lineNumberContent) : null;
+        child: SizedBox(
+          height: 48,
+          child: ElevatedButton(
+            onPressed: () {
+              final lineNumberContent = _lineNumberController.value.text;
+              final lineNumber = lineNumberContent.isNotEmpty ? int.parse(lineNumberContent) : null;
 
-            final runNumberContent = _runNumberController.value.text;
-            final runNumber = runNumberContent.isNotEmpty ? int.parse(runNumberContent) : null;
+              final runNumberContent = _runNumberController.value.text;
+              final runNumber = runNumberContent.isNotEmpty ? int.parse(runNumberContent) : null;
 
-            onSaveAndExit(lineNumber, runNumber);
-          },
-          child: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 18.0),
-            child: Text("Save & Exit"),
+              onSaveAndExit(lineNumber, runNumber);
+            },
+            child: const Text("Save & Exit"),
           ),
         ),
       ),
