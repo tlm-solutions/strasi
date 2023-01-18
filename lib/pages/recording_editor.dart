@@ -188,6 +188,23 @@ class _RecordingEditorMap extends StatelessWidget {
   Widget build(BuildContext context) {
     final bounds = LatLngBounds.fromPoints(pointList);
 
+    /*
+    When all the points are the same the southWest and northEast
+    become the same too. This leads to an error in flutter map.
+    (Unsupported operation: Infinity or NaN toInt)
+    This normally only happens during debugging.
+     */
+
+    if (bounds.southWest!.latitude == bounds.northEast!.latitude) {
+      bounds.southWest!.latitude += 0.0005;
+      bounds.northEast!.latitude -= 0.0005;
+    }
+
+    if (bounds.southWest!.longitude == bounds.northEast!.longitude) {
+      bounds.southWest!.longitude -= 0.0005;
+      bounds.northEast!.longitude += 0.0005;
+    }
+
     return FlutterMap(
       options: MapOptions(
         bounds: bounds,
