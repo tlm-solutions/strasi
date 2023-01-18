@@ -248,7 +248,7 @@ Future<Gpx> _getCoordinatesAsGpx(DatabaseBloc databaseBloc, Recording recording)
         "stop": recording.totalEnd.toIso8601String(),
       },
     )
-    ..creator = "Stasi for ${io.Platform.operatingSystem} - https://github.com/dump-dvb/stasi"
+    ..creator = "Stasi for ${io.Platform.operatingSystem} - https://github.com/tlm-solutions/stasi"
     ..version = "1.1"
     ..trks = [Trk(
       trksegs: [Trkseg(
