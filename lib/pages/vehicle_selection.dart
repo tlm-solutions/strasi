@@ -34,78 +34,82 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
 
         return Form(
           key: _dropdownFormKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                decoration: const InputDecoration(labelText: "line number"),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                onChanged: (String value) {
-                  setState(() {
-                    lineNumber = value.isNotEmpty ? int.parse(value) : null;
-                  });
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: "line number"),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (String value) {
+                      setState(() {
+                        lineNumber = value.isNotEmpty ? int.parse(value) : null;
+                      });
 
-                  if (!started) return;
+                      if (!started) return;
 
-                  _scheduleUpdateRecording(recording.recordingId!);
-                },
-                validator: (value) => value != null && value.isNotEmpty ? null : 'Enter the line number',
+                      _scheduleUpdateRecording(recording.recordingId!);
+                    },
+                    validator: (value) => value != null && value.isNotEmpty ? null : 'Enter the line number',
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'run number'),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (String value) {
+                      setState(() {
+                        runNumber = value.isNotEmpty ? int.parse(value) : null;
+                      });
+
+                      if (!started) return;
+
+                      _scheduleUpdateRecording(recording.recordingId!);
+                    },
+                    validator: (value) => value != null && value.isNotEmpty ? null : 'Enter the run number',
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if(started) {
+                        BackgroundLocation.stopLocationService();
+                        _killDebounce();
+                        await widget.databaseBloc.cleanRecording(recording.recordingId!);
+                        recording.setRecordingId(null);
+                        return;
+                      }
+
+                      final recordingId = await widget.databaseBloc.createRecording(
+                        runNumber: runNumber,
+                        lineNumber: lineNumber,
+                      );
+
+                      recording.setRecordingId(recordingId);
+
+                      BackgroundLocation.setAndroidNotification(
+                        title: "Stasi",
+                        message: "Stasi is watching you!",
+                        icon: "@mipmap/ic_launcher",
+                      );
+                      BackgroundLocation.setAndroidConfiguration(800);
+                      BackgroundLocation.startLocationService();
+
+                      BackgroundLocation.getLocationUpdates((location) async {
+                        await widget.databaseBloc.createCoordinate(recordingId,
+                          latitude: location.latitude!,
+                          longitude: location.longitude!,
+                          altitude: location.altitude!,
+                          speed: location.speed!,
+                        );
+                      });
+                    },
+                    child: started ? const Text("WE'RE DONE HERE!") : const Text("LET'S TRACK"),
+                  ),
+                ],
               ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'run number'),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                onChanged: (String value) {
-                  setState(() {
-                    runNumber = value.isNotEmpty ? int.parse(value) : null;
-                  });
-
-                  if (!started) return;
-
-                  _scheduleUpdateRecording(recording.recordingId!);
-                },
-                validator: (value) => value != null && value.isNotEmpty ? null : 'Enter the run number',
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if(started) {
-                    BackgroundLocation.stopLocationService();
-                    _killDebounce();
-                    await widget.databaseBloc.cleanRecording(recording.recordingId!);
-                    recording.setRecordingId(null);
-                    return;
-                  }
-
-                  final recordingId = await widget.databaseBloc.createRecording(
-                    runNumber: runNumber,
-                    lineNumber: lineNumber,
-                  );
-
-                  recording.setRecordingId(recordingId);
-
-                  BackgroundLocation.setAndroidNotification(
-                    title: "Stasi",
-                    message: "Stasi is watching you!",
-                    icon: "@mipmap/ic_launcher",
-                  );
-                  BackgroundLocation.setAndroidConfiguration(800);
-                  BackgroundLocation.startLocationService();
-
-                  BackgroundLocation.getLocationUpdates((location) async {
-                    await widget.databaseBloc.createCoordinate(recordingId,
-                      latitude: location.latitude!,
-                      longitude: location.longitude!,
-                      altitude: location.altitude!,
-                      speed: location.speed!,
-                    );
-                  });
-                },
-                child: started ? const Text("WE'RE DONE HERE!") : const Text("LET'S TRACK"),
-              ),
-            ],
-          )
+            ),
+          ),
         );
       },
     );
