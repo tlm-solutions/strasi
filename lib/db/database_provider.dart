@@ -55,6 +55,14 @@ class DatabaseProvider {
           );
         ''');
       },
+      onOpen: (db) async {
+        // remove recordings that have less than three cords
+        await db.execute("""
+          DELETE FROM recordings WHERE (
+            SELECT COUNT(cords.id) FROM cords WHERE cords.recording_id = recordings.id
+          ) < 3;
+        """);
+      },
       version: 1,
     );
 

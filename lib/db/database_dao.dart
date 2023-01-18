@@ -96,6 +96,17 @@ class DatabaseDao {
         ]
     );
   }
+  
+  Future<int> cleanRecording(int recordingId) async {
+    final db = await dbProvider.db;
+
+    // remove recording if it has less than three cords
+    return await db.rawDelete("""
+      DELETE FROM recordings WHERE recordings.id = ? AND (
+        SELECT COUNT(cords.id) FROM cords WHERE cords.recording_id = recordings.id
+      ) < 3;
+    """, [recordingId]);
+  }
 
   Future<int> markRecordingUploadDone(int recordingId) async {
     final db = await dbProvider.db;

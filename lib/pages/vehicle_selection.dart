@@ -73,6 +73,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                   if(started) {
                     BackgroundLocation.stopLocationService();
                     _killDebounce();
+                    await widget.databaseBloc.cleanRecording(recording.recordingId!);
                     recording.setRecordingId(null);
                     return;
                   }

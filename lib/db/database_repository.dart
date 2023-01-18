@@ -31,6 +31,8 @@ class DatabaseRepository {
       endTime: endTime
   );
 
+  Future<int> cleanRecording(int recordingId) => databaseDao.cleanRecording(recordingId);
+
   Future<int> markRecordingUploadDone(int recordingId) => databaseDao.markRecordingUploadDone(recordingId);
 
   Future<List<Coordinate>> getCoordinates(int recordingId) => databaseDao.getCoordinates(recordingId);

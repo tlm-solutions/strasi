@@ -65,6 +65,13 @@ class DatabaseBloc {
     return result;
   }
 
+  Future<int> cleanRecording(int recordingId) async {
+    final result = await _databaseRepository.cleanRecording(recordingId);
+    getRecordings();
+
+    return result;
+  }
+
   Future<int> markRecordingUploadDone(int recordingId) async {
     final result = await _databaseRepository.markRecordingUploadDone(recordingId);
     getRecordings();
