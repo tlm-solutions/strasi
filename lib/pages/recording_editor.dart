@@ -137,7 +137,7 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
           constraints: const BoxConstraints(
             maxHeight: 100,
           ),
-          child: Expanded(child: Column(
+          child: Column(
             children: [
               Flexible(
                 flex: 1,
@@ -170,8 +170,8 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
               ),
             ],
           ),
-        ))
-      ]
+        ),
+      ],
     );
   }
 }
