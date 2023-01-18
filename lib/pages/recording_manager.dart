@@ -129,6 +129,9 @@ class _RecordingEntry extends StatelessWidget {
     return wrappedFunction;
   }
 
+  bool _isExportable() =>
+      recording.lineNumber != null && recording.runNumber != null;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -179,13 +182,14 @@ class _RecordingEntry extends StatelessWidget {
                   textAlign: TextAlign.end,
                 ),
                 IconButton(
-                  onPressed: _wrapWithNotifier(onExport),
+                  onPressed: _isExportable() ? _wrapWithNotifier(onExport) : null,
                   padding: const EdgeInsets.all(6.0),
                   constraints: const BoxConstraints(),
                   icon: const Icon(Icons.save_alt),
                 ),
                 IconButton(
-                  onPressed: recording.isUploaded ? null : _wrapWithNotifier(onUpload),
+                  onPressed: _isExportable() && !recording.isUploaded ?
+                    _wrapWithNotifier(onUpload) : null,
                   padding: const EdgeInsets.all(6.0),
                   constraints: const BoxConstraints(),
                   icon: recording.isUploaded ? const Icon(Icons.done) : const Icon(Icons.upload),
