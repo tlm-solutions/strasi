@@ -38,17 +38,19 @@ class ApiClient {
     final response = await http.post(
         Uri(scheme: "https", host: _url, path: "/user/login"),
         body: jsonEncode(loginData.toMap()),
-        headers: {"Content-Type": "application/json"}
+        headers: {"Content-Type": "application/json"},
     );
 
     if (response.statusCode != 200) throw http.ClientException(response.body);
     _updateCookie(response.headers);
   }
 
-  Future<LoginData?> createAccount() async {
+  Future<LoginData> createAccount() async {
     final response = await http.post(Uri(scheme: "https", host: _url, path: "/user/create"));
+
     if (response.statusCode != 200) throw http.ClientException(response.body);
     _updateCookie(response.headers);
+
     final responseDict = jsonDecode(response.body);
     return LoginData(userId: responseDict["user_id"], password: responseDict["password"]);
   }
@@ -80,7 +82,7 @@ class ApiClient {
         "line": recording.lineNumber,
         "run": recording.runNumber,
         "region": 0,
-      }]
+      }],
     };
 
     final submitResponse = await http.post(
@@ -106,7 +108,7 @@ class ApiClient {
       return;
     }
 
-    final loginData = (await createAccount())!;
+    final loginData = await createAccount();
 
     prefs.setString("user_id", loginData.userId);
     prefs.setString("password", loginData.password);
