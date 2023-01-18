@@ -124,8 +124,7 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Flexible(
-          flex: 9,
+        Expanded(
           child: _RecordingEditorMap(
             pointList: [
               for (final time in widget.points.keys)
@@ -134,35 +133,44 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
             ],
           ),
         ),
-        Flexible(
-          flex: 1,
-          child: _RecordingEditorSlider(
-            startTime: _startTime,
-            endTime: _endTime,
-            timeList: widget.points.keys.toList(),
-            onChanged: (startTime, endTime) {
-              setState(() {
-                _startTime = startTime;
-                _endTime = endTime;
-              });
-            },
+        ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxHeight: 100,
           ),
-        ),
-        Flexible(
-          flex: 2,
-          child: _RecordingEditorButtons(
-            initialLineNumber: widget.initialLineNumber,
-            initialRunNumber: widget.initialRunNumber,
-            onSaveAndExit: (int? lineNumber, int? runNumber) async {
-              await widget.onSaveAndExit(
-                lineNumber: lineNumber,
-                runNumber: runNumber,
-                startTime: _startTime,
-                endTime: _endTime,
-              );
-            },
+          child: Expanded(child: Column(
+            children: [
+              Flexible(
+                flex: 1,
+                child: _RecordingEditorSlider(
+                  startTime: _startTime,
+                  endTime: _endTime,
+                  timeList: widget.points.keys.toList(),
+                  onChanged: (startTime, endTime) {
+                    setState(() {
+                      _startTime = startTime;
+                      _endTime = endTime;
+                    });
+                  },
+                ),
+              ),
+              Flexible(
+                flex: 2,
+                child: _RecordingEditorButtons(
+                  initialLineNumber: widget.initialLineNumber,
+                  initialRunNumber: widget.initialRunNumber,
+                  onSaveAndExit: (int? lineNumber, int? runNumber) async {
+                    await widget.onSaveAndExit(
+                      lineNumber: lineNumber,
+                      runNumber: runNumber,
+                      startTime: _startTime,
+                      endTime: _endTime,
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ),
+        ))
       ]
     );
   }
@@ -270,7 +278,7 @@ class _RecordingEditorButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    crossAxisAlignment: CrossAxisAlignment.start,
+    // crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       Flexible(
         flex: 1,
@@ -306,7 +314,10 @@ class _RecordingEditorButtons extends StatelessWidget {
 
             onSaveAndExit(lineNumber, runNumber);
           },
-          child: const Text("Save & Exit"),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(vertical: 18.0),
+            child: Text("Save & Exit"),
+          ),
         ),
       ),
     ],
