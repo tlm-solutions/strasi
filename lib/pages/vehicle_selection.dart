@@ -42,9 +42,9 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                 decoration: const InputDecoration(labelText: "line number"),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                onChanged: (String? value) {
+                onChanged: (String value) {
                   setState(() {
-                    lineNumber = value != null && value.isNotEmpty ? int.parse(value) : null;
+                    lineNumber = value.isNotEmpty ? int.parse(value) : null;
                   });
 
                   if (!started) return;
@@ -57,9 +57,9 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                 decoration: const InputDecoration(labelText: 'run number'),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                onChanged: (String? value) {
+                onChanged: (String value) {
                   setState(() {
-                    runNumber = value != null && value.isNotEmpty ? int.parse(value) : null;
+                    runNumber = value.isNotEmpty ? int.parse(value) : null;
                   });
 
                   if (!started) return;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:stasi/db/database_bloc.dart';
@@ -41,13 +42,25 @@ class _RecordingEditorState extends State<RecordingEditor> {
 
             return _RecordingEditorControl(
               points: points,
+              initialLineNumber: widget.recording.lineNumber,
+              initialRunNumber: widget.recording.runNumber,
               initialStartTime: initialStartTime,
               initialEndTime: initialEndTime,
-              onSaveAndExit: (startTime, endTime) async {
+              onSaveAndExit: ({
+                required lineNumber,
+                required runNumber,
+                required startTime,
+                required endTime,
+              }) async {
                 await widget.databaseBloc.setRecordingBounds(
                   widget.recording.id,
                   startTime: startTime,
                   endTime: endTime,
+                );
+                await widget.databaseBloc.setRecordingRunAndLineNumber(
+                    widget.recording.id,
+                    runNumber: runNumber,
+                    lineNumber: lineNumber,
                 );
 
                 if (!mounted) return;
@@ -73,15 +86,24 @@ class _RecordingEditorControl extends StatefulWidget {
   const _RecordingEditorControl({
     Key? key,
     required this.points,
+    required this.initialLineNumber,
+    required this.initialRunNumber,
     required this.initialStartTime,
     required this.initialEndTime,
     required this.onSaveAndExit,
   }) : super(key: key);
 
   final Map<DateTime, LatLng> points;
+  final int? initialLineNumber;
+  final int? initialRunNumber;
   final DateTime initialStartTime;
   final DateTime initialEndTime;
-  final Future<void> Function(DateTime startTime, DateTime endTime) onSaveAndExit;
+  final Future<void> Function({
+    required int? lineNumber,
+    required int? runNumber,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) onSaveAndExit;
 
   @override
   State<StatefulWidget> createState() => _RecordingEditorControlState();
@@ -127,9 +149,17 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
           ),
         ),
         Flexible(
+          flex: 2,
           child: _RecordingEditorButtons(
-            onSaveAndExit: () async {
-              await widget.onSaveAndExit(_startTime, _endTime);
+            initialLineNumber: widget.initialLineNumber,
+            initialRunNumber: widget.initialRunNumber,
+            onSaveAndExit: (int? lineNumber, int? runNumber) async {
+              await widget.onSaveAndExit(
+                lineNumber: lineNumber,
+                runNumber: runNumber,
+                startTime: _startTime,
+                endTime: _endTime,
+              );
             },
           ),
         ),
@@ -216,20 +246,68 @@ class _RecordingEditorSlider extends StatelessWidget {
 }
 
 class _RecordingEditorButtons extends StatelessWidget {
-  const _RecordingEditorButtons({
+  _RecordingEditorButtons({
     Key? key,
+    required this.initialLineNumber,
+    required this.initialRunNumber,
     required this.onSaveAndExit,
-  }) : super(key: key);
+  }) :
+        _lineNumberController = TextEditingController(
+          text: initialLineNumber != null ? initialLineNumber.toString() : "",
+        ),
+        _runNumberController = TextEditingController(
+          text: initialRunNumber != null ? initialRunNumber.toString() : "",
+        ),
+        super(key: key);
 
-  final VoidCallback onSaveAndExit;
+  final int? initialLineNumber;
+  final int? initialRunNumber;
+  final void Function(int? lineNumber, int? runNumber) onSaveAndExit;
+
+  final TextEditingController _lineNumberController;
+  final TextEditingController _runNumberController;
 
   @override
   Widget build(BuildContext context) => Row(
-    mainAxisAlignment: MainAxisAlignment.center,
+    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      ElevatedButton(
-        onPressed: onSaveAndExit,
-        child: const Text("Save & Exit"),
+      Flexible(
+        flex: 1,
+        child: TextFormField(
+          decoration: const InputDecoration(
+            labelText: "line number",
+          ),
+          controller: _lineNumberController,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        ),
+      ),
+      Flexible(
+        flex: 1,
+        child: TextFormField(
+          decoration: const InputDecoration(
+            labelText: "run number",
+          ),
+          controller: _runNumberController,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        ),
+      ),
+      Flexible(
+        flex: 1,
+        child: ElevatedButton(
+          onPressed: () {
+            final lineNumberContent = _lineNumberController.value.text;
+            final lineNumber = lineNumberContent.isNotEmpty ? int.parse(lineNumberContent) : null;
+
+            final runNumberContent = _runNumberController.value.text;
+            final runNumber = runNumberContent.isNotEmpty ? int.parse(runNumberContent) : null;
+
+            onSaveAndExit(lineNumber, runNumber);
+          },
+          child: const Text("Save & Exit"),
+        ),
       ),
     ],
   );
