@@ -29,8 +29,15 @@ class ApiClient {
     return _apiClient;
   }
 
-  ApiClient._internal(): _url = "trekkie.staging.dvb.solutions";
+  static String getURL() {
+    if (kReleaseMode) {
+        return "trekkie.dvb.solutions";
+    } else {
+        return "trekkie.staging.dvb.solutions";
+    }
+  }
 
+  ApiClient._internal(): _url = getURL();
   final String _url;
   io.Cookie? _cookie;
 
