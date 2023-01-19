@@ -104,7 +104,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                         );
                       });
                     },
-                    child: started ? const Text("WE'RE DONE HERE!") : const Text("LET'S TRACK"),
+                    child: started ? const Text("LEAVING VEHICLE") : const Text("ENTERING VEHICLE"),
                   ),
                 ],
               ),
