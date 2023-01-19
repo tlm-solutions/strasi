@@ -35,7 +35,7 @@ ElevatedButtonThemeData _elevatedButtonTheme(ElevatedButtonThemeData base) =>
     ElevatedButtonThemeData(
       style: ButtonStyle(
         shape: MaterialStateProperty.all(RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18.0),
+          borderRadius: BorderRadius.circular(10.0),
           side: const BorderSide(),
         ))
       )

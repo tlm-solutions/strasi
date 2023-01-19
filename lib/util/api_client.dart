@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io' as io;
 
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:gpx/gpx.dart';
 
-import 'recording.dart';
+import '../model/recording.dart';
 
 
 class LoginData {
@@ -29,8 +30,15 @@ class ApiClient {
     return _apiClient;
   }
 
-  ApiClient._internal(): _url = "trekkie.staging.dvb.solutions";
+  static String getURL() {
+    if (foundation.kReleaseMode) {
+        return "trekkie.dvb.solutions";
+    } else {
+        return "trekkie.staging.dvb.solutions";
+    }
+  }
 
+  ApiClient._internal(): _url = getURL();
   final String _url;
   io.Cookie? _cookie;
 
@@ -38,17 +46,19 @@ class ApiClient {
     final response = await http.post(
         Uri(scheme: "https", host: _url, path: "/user/login"),
         body: jsonEncode(loginData.toMap()),
-        headers: {"Content-Type": "application/json"}
+        headers: {"Content-Type": "application/json"},
     );
 
     if (response.statusCode != 200) throw http.ClientException(response.body);
     _updateCookie(response.headers);
   }
 
-  Future<LoginData?> createAccount() async {
+  Future<LoginData> createAccount() async {
     final response = await http.post(Uri(scheme: "https", host: _url, path: "/user/create"));
+
     if (response.statusCode != 200) throw http.ClientException(response.body);
     _updateCookie(response.headers);
+
     final responseDict = jsonDecode(response.body);
     return LoginData(userId: responseDict["user_id"], password: responseDict["password"]);
   }
@@ -75,12 +85,12 @@ class ApiClient {
     final timesJson = {
       "gpx_id": jsonDecode(await gpxResponse.stream.bytesToString())["gpx_id"],
       "vehicles": [{
-        "start": recording.start.toIso8601String(),
-        "stop": recording.stop.toIso8601String(),
+        "start": recording.totalStart.toIso8601String(),
+        "stop": recording.totalEnd.toIso8601String(),
         "line": recording.lineNumber,
         "run": recording.runNumber,
         "region": 0,
-      }]
+      }],
     };
 
     final submitResponse = await http.post(
@@ -106,7 +116,7 @@ class ApiClient {
       return;
     }
 
-    final loginData = (await createAccount())!;
+    final loginData = await createAccount();
 
     prefs.setString("user_id", loginData.userId);
     prefs.setString("password", loginData.password);

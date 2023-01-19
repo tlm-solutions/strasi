@@ -6,22 +6,22 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:provider/provider.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:gpx/gpx.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 
-import 'recording.dart';
-import 'recording_editor_route.dart';
-import 'running_recording.dart';
-import 'theme.dart';
-import 'api_client.dart';
+import 'package:stasi/db/database_bloc.dart';
+import 'package:stasi/routes/recording_editor_route.dart';
+import 'package:stasi/pages/running_recording.dart';
+import 'package:stasi/util/theme.dart';
+import 'package:stasi/util/api_client.dart';
+import 'package:stasi/model/recording.dart';
 
 
 class RecordingManager extends StatefulWidget {
-  final Future<Database> database;
+  final DatabaseBloc databaseBloc;
 
-  const RecordingManager({Key? key, required this.database}) : super(key: key);
+  const RecordingManager({Key? key, required this.databaseBloc}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _RecordingManagerState();
@@ -30,8 +30,9 @@ class RecordingManager extends StatefulWidget {
 class _RecordingManagerState extends State<RecordingManager> {
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: Recording.fromDb(widget.database),
+    widget.databaseBloc.getRecordings();
+    return StreamBuilder(
+        stream: widget.databaseBloc.recordings,
         builder: (context, AsyncSnapshot<List<Recording>> snapshot) {
           if (snapshot.hasError) {
             throw snapshot.error!;
@@ -52,7 +53,7 @@ class _RecordingManagerState extends State<RecordingManager> {
                       final scaffoldMessenger = ScaffoldMessenger.of(context);
 
                       final gpxPath = await _exportCoordinatesToFile(
-                          widget.database, recordings[index]
+                          widget.databaseBloc, recordings[index]
                       );
 
                       if (kDebugMode) print("GPX-Path: $gpxPath");
@@ -62,13 +63,12 @@ class _RecordingManagerState extends State<RecordingManager> {
                       ));
                     },
                     onDelete: () async {
-                      await _deleteRecording(widget.database, recordings[index]);
-                      setState(() {});
+                      await widget.databaseBloc.deleteRecording(recordings[index].id);
                     },
                     onUpload: () async {
                       final scaffoldMessenger = ScaffoldMessenger.of(context);
                       try {
-                        await _uploadRecording(widget.database, recordings[index]);
+                        await _uploadRecording(widget.databaseBloc, recordings[index]);
                       } on http.ClientException {
                         scaffoldMessenger.showSnackBar(const SnackBar(
                             content: Text("We couldn't connect to the KGB server. Is your Internet working?")
@@ -78,15 +78,14 @@ class _RecordingManagerState extends State<RecordingManager> {
                       scaffoldMessenger.showSnackBar(const SnackBar(
                           content: Text("Uploaded!")
                       ));
-                      await _markUploadDone(widget.database, recordings[index]);
-                      setState(() {});
+                      await widget.databaseBloc.markRecordingUploadDone(recordings[index].id);
                     },
                     onEdit: () async {
                       Navigator.push(context, MaterialPageRoute(
                           builder: (context) => RecordingEditorRoute(
-                              database: widget.database,
+                              databaseBloc: widget.databaseBloc,
                               recording: recordings[index],
-                          )
+                          ),
                       ));
                     },
                   ),
@@ -97,7 +96,7 @@ class _RecordingManagerState extends State<RecordingManager> {
           }
 
           return const Offstage();
-        }
+        },
     );
 
   }
@@ -130,6 +129,9 @@ class _RecordingEntry extends StatelessWidget {
     return wrappedFunction;
   }
 
+  bool _isExportable() =>
+      recording.lineNumber != null && recording.runNumber != null;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -140,67 +142,62 @@ class _RecordingEntry extends StatelessWidget {
       ),
       child: Stack(children: [
         _OverflowingText("${recording.lineNumber}"),
-        Row(
+        Table(
+          defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          columnWidths: const {
+            1: FlexColumnWidth(2),
+            2: FlexColumnWidth(2),
+            3: FlexColumnWidth(1),
+          },
           children: [
-            Flexible(child: Text(
-              "#${recording.id}",
-              style: TextStyle(
-                fontSize: 60,
-                color: Colors.grey.shade500,
-              ),
-            )),
-            Flexible(
-              flex: 2,
-              child: Center(child: Text(
-                "Run: ${recording.runNumber}",
-                style: const TextStyle(fontSize: 20),
-              )),
+            TableRow(
+              children: [
+                Text("#${recording.id}", style: const TextStyle(fontSize: 21)),
+                Text(
+                  "Line ${recording.lineNumber}",
+                  style: const TextStyle(fontSize: 18),
+                  textAlign: TextAlign.end,
+                ),
+                IconButton(
+                  onPressed: _wrapWithNotifier(onEdit),
+                  padding: const EdgeInsets.all(6.0),
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.edit),
+                ),
+                IconButton(
+                  onPressed: _wrapWithNotifier(onDelete),
+                  padding: const EdgeInsets.all(6.0),
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.delete),
+                ),
+              ],
             ),
-            Flexible(
-              flex: 2,
-              child: Center(
-                child: ValueListenableBuilder<bool>(
-                  valueListenable: _buttonsLoadingNotifier,
-                  builder: (context, buttonsLoading, _) {
-                    if (buttonsLoading) {
-                      return const CircularProgressIndicator();
-                    }
-                    return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            onPressed: _wrapWithNotifier(onExport),
-                            padding: const EdgeInsets.all(6.0),
-                            constraints: const BoxConstraints(),
-                            icon: const Icon(Icons.save_alt),
-                          ),
-                          IconButton(
-                            onPressed: _wrapWithNotifier(onDelete),
-                            padding: const EdgeInsets.all(6.0),
-                            constraints: const BoxConstraints(),
-                            icon: const Icon(Icons.delete),
-                          ),
-                          IconButton(
-                            onPressed: recording.isUploaded ? null : _wrapWithNotifier(onUpload),
-                            padding: const EdgeInsets.all(6.0),
-                            constraints: const BoxConstraints(),
-                            icon: recording.isUploaded ? const Icon(Icons.done) : const Icon(Icons.upload),
-                          ),
-                          IconButton(
-                            onPressed: _wrapWithNotifier(onEdit),
-                            padding: const EdgeInsets.all(6.0),
-                            constraints: const BoxConstraints(),
-                            icon: const Icon(Icons.edit),
-                          ),
-                        ]
-                    );
-                  },
-                )
-              )
-            )
-          ]
-        )
+            TableRow(
+              children: [
+                const Offstage(),
+                Text(
+                  "Run ${recording.runNumber}",
+                  style: const TextStyle(fontSize: 18),
+                  textAlign: TextAlign.end,
+                ),
+                IconButton(
+                  onPressed: _isExportable() ? _wrapWithNotifier(onExport) : null,
+                  padding: const EdgeInsets.all(6.0),
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.save_alt),
+                ),
+                IconButton(
+                  onPressed: _isExportable() && !recording.isUploaded ?
+                    _wrapWithNotifier(onUpload) : null,
+                  padding: const EdgeInsets.all(6.0),
+                  constraints: const BoxConstraints(),
+                  icon: recording.isUploaded ? const Icon(Icons.done) : const Icon(Icons.upload),
+                ),
+              ],
+            ),
+          ],
+        ),
       ]),
     );
   }
@@ -237,9 +234,7 @@ class _OverflowingText extends StatelessWidget {
   }
 }
 
-Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording) async {
-  final db = await database;
-
+Future<Gpx> _getCoordinatesAsGpx(DatabaseBloc databaseBloc, Recording recording) async {
   final gpx = Gpx()
     ..metadata = Metadata(
       name: DateFormat("y-M-d_H-m-s").format(DateTime.now().toUtc()),
@@ -249,25 +244,21 @@ Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording)
       extensions: {
         "line": "${recording.lineNumber}",
         "run": "${recording.runNumber}",
-        "start": recording.start.toIso8601String(),
-        "stop": recording.stop.toIso8601String(),
+        "start": recording.totalStart.toIso8601String(),
+        "stop": recording.totalEnd.toIso8601String(),
       },
     )
-    ..creator = "Stasi for ${io.Platform.operatingSystem} - https://github.com/dump-dvb/stasi"
+    ..creator = "Stasi for ${io.Platform.operatingSystem} - https://github.com/tlm-solutions/stasi"
     ..version = "1.1"
     ..trks = [Trk(
       trksegs: [Trkseg(
-        trkpts: (await db.query(
-            "cords",
-            columns: ["recording_id", "latitude", "longitude", "speed", "altitude", "time"],
-            where: "recording_id = ?",
-            whereArgs: [recording.id],
-          )).map((cordMap) => Wpt(
-            lat: cordMap["latitude"] as double,
-            lon: cordMap["longitude"] as double,
-            ele: cordMap["altitude"] as double,
-            time: DateTime.parse(cordMap["time"] as String),
-            extensions: {"speed": '${cordMap["speed"] as double}'},
+        trkpts: (await databaseBloc.getCoordinatesWithBounds(recording.id))
+            .map((coordinate) => Wpt(
+            lat: coordinate.latitude,
+            lon: coordinate.longitude,
+            ele: coordinate.altitude,
+            time: coordinate.time,
+            extensions: {"speed": '${coordinate.speed}'},
           )).toList(),
       )]
     )];
@@ -275,8 +266,8 @@ Future<Gpx> _getCoordinatesAsGpx(Future<Database> database, Recording recording)
   return gpx;
 }
 
-Future<String> _exportCoordinatesToFile(Future<Database> database, Recording recording) async {
-  final gpxData = await _getCoordinatesAsGpx(database, recording);
+Future<String> _exportCoordinatesToFile(DatabaseBloc databaseBloc, Recording recording) async {
+  final gpxData = await _getCoordinatesAsGpx(databaseBloc, recording);
 
   // This should be the start or stop time
   final secondsEpoch = (DateTime.now().toUtc().millisecondsSinceEpoch / 1000).round();
@@ -296,27 +287,8 @@ Future<String> _exportCoordinatesToFile(Future<Database> database, Recording rec
   return gpxPath;
 }
 
-Future<void> _deleteRecording(Future<Database> database, Recording recording) async {
-  final db = await database;
-
-  // cords should just be deleted via foreign key but that doesnt wok
-  await db.delete("recordings", where: "id = ?", whereArgs: [recording.id]);
-}
-
-
-Future<void> _uploadRecording(Future<Database> database, Recording recording) async {
-  final gpx = await _getCoordinatesAsGpx(database, recording);
+Future<void> _uploadRecording(DatabaseBloc databaseBloc, Recording recording) async {
+  final gpx = await _getCoordinatesAsGpx(databaseBloc, recording);
 
   await ApiClient().sendGpx(gpx, recording);
-}
-
-Future<void> _markUploadDone(Future<Database> database, Recording recording) async {
-  final db = await database;
-
-  await db.update(
-    "recordings",
-    {"is_uploaded": true},
-    where: "id = ?",
-    whereArgs: [recording.id]
-  );
 }
