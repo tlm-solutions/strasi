@@ -213,6 +213,7 @@ LatLngBounds _getBoundsFromPoints(List<LatLng> points) {
 
 class _RecordingEditorMapState extends State<_RecordingEditorMap> {
   late MapController _mapController;
+  bool _shouldApplyBounds = true;
 
   @override
   void initState() {
@@ -226,34 +227,69 @@ class _RecordingEditorMapState extends State<_RecordingEditorMap> {
 
     // yeah this won't get triggered when the orientation changes.
     // too bad...
-    if (oldWidget.pointList != widget.pointList) {
-      _mapController.fitBounds(
-        _getBoundsFromPoints(widget.pointList),
-        options: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
-      );
+    if (_shouldApplyBounds && oldWidget.pointList != widget.pointList) {
+      _updateBounds();
     }
+  }
+
+  void _updateBounds() {
+    _mapController.fitBounds(
+      _getBoundsFromPoints(widget.pointList),
+      options: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        bounds: _getBoundsFromPoints(widget.pointList),
-        boundsOptions: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
-      ),
+    return Stack(
       children: [
-        TileLayer(
-          urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          subdomains: const ["a", "b", "c"],
-          tileBuilder: darkModeTileBuilder,
-          backgroundColor: Colors.black54,
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            bounds: _getBoundsFromPoints(widget.pointList),
+            boundsOptions: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+              subdomains: const ["a", "b", "c"],
+              tileBuilder: darkModeTileBuilder,
+              backgroundColor: Colors.black54,
+            ),
+            PolylineLayer(
+              polylines: [Polyline(
+                points: widget.pointList,
+                strokeWidth: 10,
+              )],
+            ),
+          ],
         ),
-        PolylineLayer(
-          polylines: [Polyline(
-            points: widget.pointList,
-            strokeWidth: 10,
-          )],
+        Positioned(
+          top: 3,
+          right: 3,
+          child: ToggleButtons(
+            isSelected: [_shouldApplyBounds, false],
+            color: Colors.white,
+            onPressed: (index) {
+              switch (index) {
+                case 0:  // lock
+                  setState(() {
+                    _shouldApplyBounds = !_shouldApplyBounds;
+                  });
+
+                  if (_shouldApplyBounds) _updateBounds();
+                  break;
+
+                case 1:  // center
+                  _updateBounds();
+                  break;
+              }
+            },
+            children: const [
+              Icon(Icons.lock),
+              Icon(Icons.center_focus_strong),
+            ],
+          ),
         ),
       ],
     );
