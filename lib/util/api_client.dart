@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io' as io;
 
-import 'package:flutter/foundation.dart' as Foundation;
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -31,7 +31,7 @@ class ApiClient {
   }
 
   static String getURL() {
-    if (Foundation.kReleaseMode) {
+    if (foundation.kReleaseMode) {
         return "trekkie.dvb.solutions";
     } else {
         return "trekkie.staging.dvb.solutions";
