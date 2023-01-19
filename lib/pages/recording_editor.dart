@@ -176,7 +176,7 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
   }
 }
 
-class _RecordingEditorMap extends StatelessWidget {
+class _RecordingEditorMap extends StatefulWidget {
   const _RecordingEditorMap({
     Key? key,
     required this.pointList,
@@ -185,46 +185,120 @@ class _RecordingEditorMap extends StatelessWidget {
   final List<LatLng> pointList;
 
   @override
-  Widget build(BuildContext context) {
-    final bounds = LatLngBounds.fromPoints(pointList);
+  _RecordingEditorMapState createState() => _RecordingEditorMapState();
+}
 
-    /*
+LatLngBounds _getBoundsFromPoints(List<LatLng> points) {
+  final bounds = LatLngBounds.fromPoints(points);
+
+  /*
     When all the points are the same the southWest and northEast
     become the same too. This leads to an error in flutter map.
     (Unsupported operation: Infinity or NaN toInt)
     This normally only happens during debugging.
-     */
+  */
 
-    if (bounds.southWest!.latitude == bounds.northEast!.latitude) {
-      bounds.southWest!.latitude += 0.0005;
-      bounds.northEast!.latitude -= 0.0005;
+  if (bounds.southWest!.latitude == bounds.northEast!.latitude) {
+    bounds.southWest!.latitude += 0.0005;
+    bounds.northEast!.latitude -= 0.0005;
+  }
+
+  if (bounds.southWest!.longitude == bounds.northEast!.longitude) {
+    bounds.southWest!.longitude -= 0.0005;
+    bounds.northEast!.longitude += 0.0005;
+  }
+
+  return bounds;
+}
+
+class _RecordingEditorMapState extends State<_RecordingEditorMap> {
+  late MapController _mapController;
+  bool _shouldApplyBounds = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+  }
+
+  @override
+  void didUpdateWidget(_RecordingEditorMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // yeah this won't get triggered when the orientation changes.
+    // too bad...
+    if (_shouldApplyBounds && oldWidget.pointList != widget.pointList) {
+      _updateBounds();
     }
+  }
 
-    if (bounds.southWest!.longitude == bounds.northEast!.longitude) {
-      bounds.southWest!.longitude -= 0.0005;
-      bounds.northEast!.longitude += 0.0005;
-    }
+  void _updateBounds() {
+    _mapController.fitBounds(
+      _getBoundsFromPoints(widget.pointList),
+      options: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
+    );
+  }
 
-    return FlutterMap(
-      options: MapOptions(
-        bounds: bounds,
-        boundsOptions: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
-      ),
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
       children: [
-        TileLayer(
-          urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          subdomains: const ["a", "b", "c"],
-          tileBuilder: darkModeTileBuilder,
-          backgroundColor: Colors.black54,
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            bounds: _getBoundsFromPoints(widget.pointList),
+            boundsOptions: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+              subdomains: const ["a", "b", "c"],
+              tileBuilder: darkModeTileBuilder,
+              backgroundColor: Colors.black54,
+            ),
+            PolylineLayer(
+              polylines: [Polyline(
+                points: widget.pointList,
+                strokeWidth: 10,
+              )],
+            ),
+          ],
         ),
-        PolylineLayer(
-          polylines: [Polyline(
-            points: pointList,
-            strokeWidth: 10,
-          )],
+        Positioned(
+          top: 3,
+          right: 3,
+          child: ToggleButtons(
+            isSelected: [_shouldApplyBounds, false],
+            color: Colors.white,
+            onPressed: (index) {
+              switch (index) {
+                case 0:  // lock
+                  setState(() {
+                    _shouldApplyBounds = !_shouldApplyBounds;
+                  });
+
+                  if (_shouldApplyBounds) _updateBounds();
+                  break;
+
+                case 1:  // center
+                  _updateBounds();
+                  break;
+              }
+            },
+            children: const [
+              Icon(Icons.lock),
+              Icon(Icons.center_focus_strong),
+            ],
+          ),
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
   }
 }
 
@@ -270,27 +344,37 @@ class _RecordingEditorSlider extends StatelessWidget {
   }
 }
 
-class _RecordingEditorButtons extends StatelessWidget {
-  _RecordingEditorButtons({
+class _RecordingEditorButtons extends StatefulWidget {
+  const _RecordingEditorButtons({
     Key? key,
     required this.initialLineNumber,
     required this.initialRunNumber,
     required this.onSaveAndExit,
-  }) :
-        _lineNumberController = TextEditingController(
-          text: initialLineNumber != null ? initialLineNumber.toString() : "",
-        ),
-        _runNumberController = TextEditingController(
-          text: initialRunNumber != null ? initialRunNumber.toString() : "",
-        ),
-        super(key: key);
+  }) : super(key: key);
 
   final int? initialLineNumber;
   final int? initialRunNumber;
   final void Function(int? lineNumber, int? runNumber) onSaveAndExit;
 
-  final TextEditingController _lineNumberController;
-  final TextEditingController _runNumberController;
+  @override
+  _RecordingEditorButtonsState createState() => _RecordingEditorButtonsState();
+}
+
+class _RecordingEditorButtonsState extends State<_RecordingEditorButtons> {
+  late TextEditingController _lineNumberController;
+  late TextEditingController _runNumberController;
+
+  @override
+  void initState() {
+    _lineNumberController = TextEditingController(
+      text: widget.initialLineNumber != null ? widget.initialLineNumber.toString() : "",
+    );
+    _runNumberController = TextEditingController(
+      text: widget.initialRunNumber != null ? widget.initialRunNumber.toString() : "",
+    );
+
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) => Row(
@@ -342,7 +426,7 @@ class _RecordingEditorButtons extends StatelessWidget {
               final runNumberContent = _runNumberController.value.text;
               final runNumber = runNumberContent.isNotEmpty ? int.parse(runNumberContent) : null;
 
-              onSaveAndExit(lineNumber, runNumber);
+              widget.onSaveAndExit(lineNumber, runNumber);
             },
             child: const Text("Save & Exit"),
           ),
@@ -350,4 +434,11 @@ class _RecordingEditorButtons extends StatelessWidget {
       ),
     ],
   );
+
+  @override
+  void dispose() {
+    _lineNumberController.dispose();
+    _runNumberController.dispose();
+    super.dispose();
+  }
 }

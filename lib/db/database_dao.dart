@@ -163,8 +163,11 @@ class DatabaseDao {
           LEFT JOIN recordings AS rec ON cords.recording_id = rec.id
           WHERE
             rec.id = ? 
-            AND cords.id BETWEEN rec.start_cord_id AND rec.end_cord_id;
-      """, [recordingId]
+            AND (
+              (cords.id >= rec.start_cord_id OR rec.start_cord_id IS NULL) AND
+              (cords.id <= rec.end_cord_id OR rec.end_cord_id IS NULL)
+            );
+        """, [recordingId]
     ));
   }
 
