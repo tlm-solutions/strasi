@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:stasi/db/database_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../model/recording.dart';
 
@@ -246,9 +247,32 @@ class _RecordingEditorMapState extends State<_RecordingEditorMap> {
         FlutterMap(
           mapController: _mapController,
           options: MapOptions(
+            interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
             bounds: _getBoundsFromPoints(widget.pointList),
             boundsOptions: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
           ),
+          nonRotatedChildren: [
+            AttributionWidget.defaultWidget(
+              source: "OpenStreetMap contributors",
+              onSourceTapped: () async {
+                const osmLink = "https://www.openstreetmap.org/copyright";
+
+                final osmUri = Uri.parse(osmLink);
+                if (await canLaunchUrl(osmUri)) {
+                  await launchUrl(osmUri, mode: LaunchMode.externalApplication);
+                  return;
+                }
+                await Clipboard.setData(const ClipboardData(text: osmLink));
+
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text(
+                    "Couldn't open browser! Copied link to clipboard.",
+                  )),
+                );
+              },
+            ),
+          ],
           children: [
             TileLayer(
               urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",

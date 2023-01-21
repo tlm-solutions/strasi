@@ -60,5 +60,9 @@
     	<string>fetch</string>
     	<string>location</string>
     </array>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>https</string>
+    </array>
 </dict>
 </plist>

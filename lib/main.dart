@@ -57,6 +57,10 @@ class _MyHomePageState extends State<MyHomePage> {
             RecordingManager(databaseBloc: widget.databaseBloc),
             const LicensePage(
               applicationName: "Stasi",
+              applicationLegalese: """
+                © TKFRvision All Rights Reserved
+                Can we decide on FOSS-License already? For fuck's sake!
+              """,
             ),
           ],
         ),
