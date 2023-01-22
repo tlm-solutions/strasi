@@ -71,12 +71,12 @@ class _RecordingManagerState extends State<RecordingManager> {
                         await _uploadRecording(widget.databaseBloc, recordings[index]);
                       } on http.ClientException {
                         scaffoldMessenger.showSnackBar(const SnackBar(
-                            content: Text("We couldn't connect to the KGB server. Is your Internet working?")
+                            content: Text("We couldn't connect to the KGB server. Is your Internet working?"),
                         ));
                         return;
                       }
                       scaffoldMessenger.showSnackBar(const SnackBar(
-                          content: Text("Uploaded!")
+                          content: Text("Uploaded!"),
                       ));
                       await widget.databaseBloc.markRecordingUploadDone(recordings[index].id);
                     },

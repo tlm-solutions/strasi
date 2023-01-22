@@ -9,16 +9,16 @@ class DatabaseDao {
   Future<List<Recording>> getRecordings() async {
     final db = await dbProvider.db;
 
-    final recordingDict = await db.rawQuery('''
+    final recordingDict = await db.rawQuery("""
       SELECT rec.id, rec.line_number, rec.run_number, rec.is_uploaded,
         start_cord.time AS start, end_cord.time AS end,
         MIN(cords.time) AS total_start, MAX(cords.time) AS total_end
-        FROM recordings AS rec
-        LEFT JOIN cords start_cord ON start_cord.id = rec.start_cord_id
-        LEFT JOIN cords end_cord ON end_cord.id = rec.end_cord_id
-        JOIN cords ON rec.id = cords.recording_id
-        GROUP BY rec.id;
-    ''');
+      FROM recordings AS rec
+      LEFT JOIN cords start_cord ON start_cord.id = rec.start_cord_id
+      LEFT JOIN cords end_cord ON end_cord.id = rec.end_cord_id
+      JOIN cords ON rec.id = cords.recording_id
+      GROUP BY rec.id;
+    """);
 
     return recordingDict.map((entry) =>
         Recording(
@@ -72,23 +72,23 @@ class DatabaseDao {
     final db = await dbProvider.db;
 
     return await db.rawUpdate(
-        '''
-        UPDATE recordings
-        SET 
-          start_cord_id = (
-            SELECT cords.id 
-            FROM cords 
-            WHERE NOT DATETIME(?) > cords.time
-            ORDER BY cords.time
-          ),
-          end_cord_id = (
-            SELECT cords.id
-            FROM cords
-            WHERE NOT DATETIME(?) < cords.time
-            ORDER BY cords.time DESC
-          )
-        WHERE id = ?;
-        ''',
+        """
+          UPDATE recordings
+          SET 
+            start_cord_id = (
+              SELECT cords.id 
+              FROM cords 
+              WHERE NOT DATETIME(?) > cords.time
+              ORDER BY cords.time
+            ),
+            end_cord_id = (
+              SELECT cords.id
+              FROM cords
+              WHERE NOT DATETIME(?) < cords.time
+              ORDER BY cords.time DESC
+            )
+          WHERE id = ?;
+        """,
         [
           startTime.toString(),
           endTime.toString(),
