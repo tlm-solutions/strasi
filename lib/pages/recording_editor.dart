@@ -189,29 +189,6 @@ class _RecordingEditorMap extends StatefulWidget {
   _RecordingEditorMapState createState() => _RecordingEditorMapState();
 }
 
-LatLngBounds _getBoundsFromPoints(List<LatLng> points) {
-  final bounds = LatLngBounds.fromPoints(points);
-
-  /*
-    When all the points are the same the southWest and northEast
-    become the same too. This leads to an error in flutter map.
-    (Unsupported operation: Infinity or NaN toInt)
-    This normally only happens during debugging.
-  */
-
-  if (bounds.southWest!.latitude == bounds.northEast!.latitude) {
-    bounds.southWest!.latitude += 0.0005;
-    bounds.northEast!.latitude -= 0.0005;
-  }
-
-  if (bounds.southWest!.longitude == bounds.northEast!.longitude) {
-    bounds.southWest!.longitude -= 0.0005;
-    bounds.northEast!.longitude += 0.0005;
-  }
-
-  return bounds;
-}
-
 class _RecordingEditorMapState extends State<_RecordingEditorMap> {
   late MapController _mapController;
   bool _shouldApplyBounds = true;
@@ -251,32 +228,12 @@ class _RecordingEditorMapState extends State<_RecordingEditorMap> {
             bounds: _getBoundsFromPoints(widget.pointList),
             boundsOptions: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
           ),
-          nonRotatedChildren: [
-            AttributionWidget.defaultWidget(
-              source: "OpenStreetMap contributors",
-              onSourceTapped: () async {
-                const osmLink = "https://www.openstreetmap.org/copyright";
-
-                final osmUri = Uri.parse(osmLink);
-                if (await canLaunchUrl(osmUri)) {
-                  await launchUrl(osmUri, mode: LaunchMode.externalApplication);
-                  return;
-                }
-                await Clipboard.setData(const ClipboardData(text: osmLink));
-
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text(
-                    "Couldn't open browser! Copied link to clipboard.",
-                  )),
-                );
-              },
-            ),
-          ],
+          nonRotatedChildren: const [_MapAttribution()],
           children: [
             TileLayer(
               urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
               subdomains: const ["a", "b", "c"],
+              userAgentPackageName: "solutions.tlm.stasi",
               tileBuilder: darkModeTileBuilder,
               backgroundColor: Colors.black54,
             ),
@@ -324,6 +281,64 @@ class _RecordingEditorMapState extends State<_RecordingEditorMap> {
     _mapController.dispose();
     super.dispose();
   }
+}
+
+
+class _MapAttribution extends StatelessWidget {
+  const _MapAttribution({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) => AttributionWidget(
+    attributionBuilder: (context) => ColoredBox(
+      color: Colors.black.withOpacity(0.5),
+      child: GestureDetector(
+        onTap: () async {
+          /*
+           * This is bad practice.
+           * We will have to change this with the next stable release of flutter
+           * to "if(context.mounted)".
+           * https://github.com/flutter/flutter/issues/110694
+           */
+          final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+          const osmLink = "https://www.openstreetmap.org/copyright";
+
+          final osmUri = Uri.parse(osmLink);
+          if (await canLaunchUrl(osmUri)) {
+            await launchUrl(osmUri, mode: LaunchMode.externalApplication);
+            return;
+          }
+          await Clipboard.setData(const ClipboardData(text: osmLink));
+
+          scaffoldMessenger.showSnackBar(
+            const SnackBar(content: Text(
+              "Couldn't open browser! Copied link to clipboard.",
+            )),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(3.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text("flutter_map | © "),
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: Text(
+                  "OpenStreetMap",
+                  style: TextStyle(
+                    color: Color(0xFF0000EE),
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              Text(" contributors"),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 
@@ -465,4 +480,27 @@ class _RecordingEditorButtonsState extends State<_RecordingEditorButtons> {
     _runNumberController.dispose();
     super.dispose();
   }
+}
+
+LatLngBounds _getBoundsFromPoints(List<LatLng> points) {
+  final bounds = LatLngBounds.fromPoints(points);
+
+  /*
+    When all the points are the same the southWest and northEast
+    become the same too. This leads to an error in flutter map.
+    (Unsupported operation: Infinity or NaN toInt)
+    This normally only happens during debugging.
+  */
+
+  if (bounds.southWest!.latitude == bounds.northEast!.latitude) {
+    bounds.southWest!.latitude += 0.0005;
+    bounds.northEast!.latitude -= 0.0005;
+  }
+
+  if (bounds.southWest!.longitude == bounds.northEast!.longitude) {
+    bounds.southWest!.longitude -= 0.0005;
+    bounds.northEast!.longitude += 0.0005;
+  }
+
+  return bounds;
 }
