@@ -12,7 +12,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:stasi/db/database_bloc.dart';
 import 'package:stasi/routes/recording_editor_route.dart';
-import 'package:stasi/pages/running_recording.dart';
+import 'package:stasi/notifiers/running_recording.dart';
 import 'package:stasi/util/theme.dart';
 import 'package:stasi/util/api_client.dart';
 import 'package:stasi/model/recording.dart';

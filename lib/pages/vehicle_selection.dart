@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:background_location/background_location.dart';
 import 'package:provider/provider.dart';
-import 'package:stasi/pages/running_recording.dart';
 
-import '../db/database_bloc.dart';
+import 'package:stasi/notifiers/running_recording.dart';
+import 'package:stasi/db/database_bloc.dart';
 
 
 class VehicleSelection extends StatefulWidget {
