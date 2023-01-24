@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -59,9 +60,9 @@ class _RecordingMapState extends State<RecordingMap> {
           nonRotatedChildren: const [_MapAttribution()],
           children: [
             TileLayer(
-              urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              subdomains: const ["a", "b", "c"],
-              userAgentPackageName: "solutions.tlm.stasi",
+              urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+              userAgentPackageName: "solutions.dvb.stasi",
+              tileProvider: _CachedTileProvider(),
               tileBuilder: darkModeTileBuilder,
               backgroundColor: Colors.black54,
             ),
@@ -189,4 +190,17 @@ LatLngBounds _getBoundsFromPoints(List<LatLng> points) {
   }
 
   return bounds;
+}
+
+class _CachedTileProvider extends TileProvider {
+
+  @override
+  ImageProvider<Object> getImage(Coords<num> coords, TileLayer options) =>
+      CachedNetworkImageProvider(
+        getTileUrl(coords, options),
+        // im not sure if it respects the cache-control headers
+        // let's hope it does
+        headers: headers,
+      );
+
 }
