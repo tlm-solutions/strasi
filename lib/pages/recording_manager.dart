@@ -50,15 +50,14 @@ class _RecordingManagerState extends State<RecordingManager> {
                   itemBuilder: (context, index) => _RecordingEntry(
                     recording: recordings[index],
                     onExport: () async {
-                      final scaffoldMessenger = ScaffoldMessenger.of(context);
-
                       final gpxPath = await _exportCoordinatesToFile(
                           widget.databaseBloc, recordings[index]
                       );
 
                       if (kDebugMode) print("GPX-Path: $gpxPath");
 
-                      scaffoldMessenger.showSnackBar(SnackBar(
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(
                         content: Text("Stored to $gpxPath"),
                       ));
                     },
