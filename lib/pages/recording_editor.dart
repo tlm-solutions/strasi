@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:stasi/db/database_bloc.dart';
 
-import '../model/recording.dart';
+import 'package:stasi/db/database_bloc.dart';
+import 'package:stasi/widgets/recording_map.dart';
+import 'package:stasi/model/recording.dart';
 
 
 class RecordingEditor extends StatefulWidget {
@@ -18,7 +18,7 @@ class RecordingEditor extends StatefulWidget {
   final Recording recording;
 
   @override
-  State<StatefulWidget> createState() => _RecordingEditorState();
+  State<RecordingEditor> createState() => _RecordingEditorState();
 }
 
 class _RecordingEditorState extends State<RecordingEditor> {
@@ -125,7 +125,7 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
     return Column(
       children: [
         Expanded(
-          child: _RecordingEditorMap(
+          child: RecordingMap(
             pointList: [
               for (final time in widget.points.keys)
                 if (_startTime.compareTo(time) <= 0 && _endTime.compareTo(time) >= 0)
@@ -173,132 +173,6 @@ class _RecordingEditorControlState extends State<_RecordingEditorControl> {
         ),
       ],
     );
-  }
-}
-
-class _RecordingEditorMap extends StatefulWidget {
-  const _RecordingEditorMap({
-    Key? key,
-    required this.pointList,
-  }) : super(key: key);
-
-  final List<LatLng> pointList;
-
-  @override
-  _RecordingEditorMapState createState() => _RecordingEditorMapState();
-}
-
-LatLngBounds _getBoundsFromPoints(List<LatLng> points) {
-  final bounds = LatLngBounds.fromPoints(points);
-
-  /*
-    When all the points are the same the southWest and northEast
-    become the same too. This leads to an error in flutter map.
-    (Unsupported operation: Infinity or NaN toInt)
-    This normally only happens during debugging.
-  */
-
-  if (bounds.southWest!.latitude == bounds.northEast!.latitude) {
-    bounds.southWest!.latitude += 0.0005;
-    bounds.northEast!.latitude -= 0.0005;
-  }
-
-  if (bounds.southWest!.longitude == bounds.northEast!.longitude) {
-    bounds.southWest!.longitude -= 0.0005;
-    bounds.northEast!.longitude += 0.0005;
-  }
-
-  return bounds;
-}
-
-class _RecordingEditorMapState extends State<_RecordingEditorMap> {
-  late MapController _mapController;
-  bool _shouldApplyBounds = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _mapController = MapController();
-  }
-
-  @override
-  void didUpdateWidget(_RecordingEditorMap oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    // yeah this won't get triggered when the orientation changes.
-    // too bad...
-    if (_shouldApplyBounds && oldWidget.pointList != widget.pointList) {
-      _updateBounds();
-    }
-  }
-
-  void _updateBounds() {
-    _mapController.fitBounds(
-      _getBoundsFromPoints(widget.pointList),
-      options: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            bounds: _getBoundsFromPoints(widget.pointList),
-            boundsOptions: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              subdomains: const ["a", "b", "c"],
-              tileBuilder: darkModeTileBuilder,
-              backgroundColor: Colors.black54,
-            ),
-            PolylineLayer(
-              polylines: [Polyline(
-                points: widget.pointList,
-                strokeWidth: 10,
-              )],
-            ),
-          ],
-        ),
-        Positioned(
-          top: 3,
-          right: 3,
-          child: ToggleButtons(
-            isSelected: [_shouldApplyBounds, false],
-            color: Colors.white,
-            onPressed: (index) {
-              switch (index) {
-                case 0:  // lock
-                  setState(() {
-                    _shouldApplyBounds = !_shouldApplyBounds;
-                  });
-
-                  if (_shouldApplyBounds) _updateBounds();
-                  break;
-
-                case 1:  // center
-                  _updateBounds();
-                  break;
-              }
-            },
-            children: const [
-              Icon(Icons.lock),
-              Icon(Icons.center_focus_strong),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    _mapController.dispose();
-    super.dispose();
   }
 }
 

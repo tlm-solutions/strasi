@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:stasi/db/database_bloc.dart';
-import 'package:stasi/pages/running_recording.dart';
+import 'package:stasi/notifiers/running_recording.dart';
 import 'package:stasi/util/theme.dart';
 import 'package:stasi/pages/recording_manager.dart';
 import 'package:stasi/pages/vehicle_selection.dart';
@@ -57,6 +57,10 @@ class _MyHomePageState extends State<MyHomePage> {
             RecordingManager(databaseBloc: widget.databaseBloc),
             const LicensePage(
               applicationName: "Stasi",
+              applicationLegalese: """
+                © TKFRvision All Rights Reserved
+                Can we decide on FOSS-License already? For fuck's sake!
+              """,
             ),
           ],
         ),
