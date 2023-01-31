@@ -235,6 +235,9 @@ class _OverflowingText extends StatelessWidget {
 }
 
 Future<Gpx> _getCoordinatesAsGpx(DatabaseBloc databaseBloc, Recording recording) async {
+  final recordingStart = recording.start ?? recording.totalStart;
+  final recordingEnd = recording.end ?? recording.totalEnd;
+
   final gpx = Gpx()
     ..metadata = Metadata(
       name: DateFormat("y-M-d_H-m-s").format(DateTime.now().toUtc()),
@@ -244,8 +247,8 @@ Future<Gpx> _getCoordinatesAsGpx(DatabaseBloc databaseBloc, Recording recording)
       extensions: {
         "line": "${recording.lineNumber}",
         "run": "${recording.runNumber}",
-        "start": recording.totalStart.toIso8601String(),
-        "stop": recording.totalEnd.toIso8601String(),
+        "start": recordingStart.toIso8601String(),
+        "stop": recordingEnd.toIso8601String(),
       },
     )
     ..creator = "Stasi for ${io.Platform.operatingSystem} - https://github.com/tlm-solutions/stasi"
