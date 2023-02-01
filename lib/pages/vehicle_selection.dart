@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:background_location/background_location.dart';
@@ -72,7 +73,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                   ),
                   ElevatedButton(
                     onPressed: () async {
-                      if(started) {
+                      if (started) {
                         BackgroundLocation.stopLocationService();
                         _killDebounce();
                         await widget.databaseBloc.cleanRecording(recording.recordingId!);
@@ -96,6 +97,22 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                       BackgroundLocation.startLocationService();
 
                       BackgroundLocation.getLocationUpdates((location) async {
+                        /*
+                         * This skips the location values while the
+                         * gps chip is still calibrating.
+                         * Haven't tested this on IOS yet.
+                         */
+                        const minimumAccuracy = 62;
+                        if (location.accuracy! > minimumAccuracy) {
+                          if (kDebugMode) {
+                            print(
+                              "Too inaccurate location: ${location.accuracy!} (> $minimumAccuracy)"
+                            );
+                          }
+
+                          return;
+                        }
+
                         await widget.databaseBloc.createCoordinate(recordingId,
                           latitude: location.latitude!,
                           longitude: location.longitude!,
