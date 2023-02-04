@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:background_location/background_location.dart';
@@ -104,12 +103,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                          */
                         const minimumAccuracy = 62;
                         if (location.accuracy! > minimumAccuracy) {
-                          if (kDebugMode) {
-                            print(
-                              "Too inaccurate location: ${location.accuracy!} (> $minimumAccuracy)"
-                            );
-                          }
-
+                          debugPrint("Too inaccurate location: ${location.accuracy!} (> $minimumAccuracy)");
                           return;
                         }
 

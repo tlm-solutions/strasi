@@ -3,9 +3,10 @@ import 'dart:io' as io;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:provider/provider.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:gpx/gpx.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
@@ -51,14 +52,23 @@ class _RecordingManagerState extends State<RecordingManager> {
                     recording: recordings[index],
                     onExport: () async {
                       final gpxPath = await _exportCoordinatesToFile(
-                          widget.databaseBloc, recordings[index]
+                          widget.databaseBloc,
+                          recordings[index],
                       );
 
-                      if (kDebugMode) print("GPX-Path: $gpxPath");
+                      if (gpxPath == null) {
+                        debugPrint("User canceled export");
+                      } else {
+                        debugPrint("GPX-file saved to $gpxPath");
+                      }
 
                       if (!mounted) return;
                       ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(
-                        content: Text("Stored to $gpxPath"),
+                        content: Text(
+                            gpxPath != null
+                                ? "Stored file."
+                                : "You did not select a path. Export canceled!",
+                        ),
                       ));
                     },
                     onDelete: () async {
@@ -269,25 +279,33 @@ Future<Gpx> _getCoordinatesAsGpx(DatabaseBloc databaseBloc, Recording recording)
   return gpx;
 }
 
-Future<String> _exportCoordinatesToFile(DatabaseBloc databaseBloc, Recording recording) async {
+/// Returns filepath or null if user canceled export.
+Future<String?> _exportCoordinatesToFile(DatabaseBloc databaseBloc, Recording recording) async {
   final gpxData = await _getCoordinatesAsGpx(databaseBloc, recording);
+  final fileName = "stasi-export_${recording.id}_${recording.lineNumber}_${recording.runNumber}.gpx";
+  final gpxFileContents = GpxWriter().asString(gpxData, pretty: true);
 
-  // This should be the start or stop time
-  final secondsEpoch = (DateTime.now().toUtc().millisecondsSinceEpoch / 1000).round();
-  final fileName = "${recording.id}_${recording.lineNumber}_${recording.runNumber}_$secondsEpoch.gpx";
+  // if in debug mode store export in app specific files too
+  // so adb pull is easier
+  if (kDebugMode) {
+    final storageDir = io.Platform.isAndroid
+        ? (await path_provider.getExternalStorageDirectory())!
+        : await path_provider.getApplicationDocumentsDirectory();
 
-  final io.Directory storageDir;
-  if (io.Platform.isAndroid) {
-    storageDir = (await path_provider.getExternalStorageDirectory())!;
-  } else {
-    storageDir = await path_provider.getApplicationDocumentsDirectory();
+    final gpxPath = path.join(storageDir.path, fileName);
+    final gpxFile = io.File(gpxPath);
+
+    await gpxFile.writeAsString(gpxFileContents);
+    debugPrint("GPX-Stored in: $gpxPath");
   }
 
-  final gpxPath = path.join(storageDir.path, fileName);
-  final gpxFile = io.File(gpxPath);
+  // store using the dialog so the files are independent from the app
+  final saveFileParams = SaveFileDialogParams(
+    fileName: fileName,
+    data: Uint8List.fromList(gpxFileContents.codeUnits),
+  );
 
-  await gpxFile.writeAsString(GpxWriter().asString(gpxData, pretty: true));
-  return gpxPath;
+  return await FlutterFileDialog.saveFile(params: saveFileParams);
 }
 
 Future<void> _uploadRecording(DatabaseBloc databaseBloc, Recording recording) async {

@@ -148,7 +148,6 @@ class DatabaseDao {
       whereArgs: [recordingId],
       orderBy: "time",
     ));
-
   }
 
   Future<List<Coordinate>> getCoordinatesWithBounds(int recordingId) async {
