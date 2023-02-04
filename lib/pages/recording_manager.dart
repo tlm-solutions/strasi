@@ -4,9 +4,7 @@ import 'dart:io' as io;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
-import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
-import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:gpx/gpx.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
@@ -284,20 +282,6 @@ Future<String?> _exportCoordinatesToFile(DatabaseBloc databaseBloc, Recording re
   final gpxData = await _getCoordinatesAsGpx(databaseBloc, recording);
   final fileName = "stasi-export_${recording.id}_${recording.lineNumber}_${recording.runNumber}.gpx";
   final gpxFileContents = GpxWriter().asString(gpxData, pretty: true);
-
-  // if in debug mode store export in app specific files too
-  // so adb pull is easier
-  if (kDebugMode) {
-    final storageDir = io.Platform.isAndroid
-        ? (await path_provider.getExternalStorageDirectory())!
-        : await path_provider.getApplicationDocumentsDirectory();
-
-    final gpxPath = path.join(storageDir.path, fileName);
-    final gpxFile = io.File(gpxPath);
-
-    await gpxFile.writeAsString(gpxFileContents);
-    debugPrint("GPX-Stored in: $gpxPath");
-  }
 
   // store using the dialog so the files are independent from the app
   final saveFileParams = SaveFileDialogParams(
