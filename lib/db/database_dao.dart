@@ -113,7 +113,7 @@ class DatabaseDao {
 
     return await db.update(
       "recordings",
-      {"is_uploaded": true},
+      {"is_uploaded": 1},
       where: "id = ?",
       whereArgs: [recordingId],
     );

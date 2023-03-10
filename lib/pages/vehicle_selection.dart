@@ -92,7 +92,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                         message: "Stasi is watching you!",
                         icon: "@mipmap/ic_launcher",
                       );
-                      BackgroundLocation.setAndroidConfiguration(800);
+                      BackgroundLocation.setAndroidConfiguration(1200);
                       BackgroundLocation.startLocationService();
 
                       BackgroundLocation.getLocationUpdates((location) async {
