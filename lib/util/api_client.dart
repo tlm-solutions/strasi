@@ -32,7 +32,7 @@ class ApiClient {
 
   static String getURL() {
     if (foundation.kReleaseMode) {
-        return "trekkie.staging.dvb.solutions";
+        return "trekkie.dvb.solutions";
     } else {
         return "trekkie.staging.dvb.solutions";
     }
