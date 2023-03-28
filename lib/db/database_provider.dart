@@ -26,10 +26,10 @@ class DatabaseProvider {
     final database = await openDatabase(
       join(databasePath, "cords.db"),
       onConfigure: (db) async {
-        await db.execute('PRAGMA foreign_keys = ON');
+        await db.execute("PRAGMA foreign_keys = ON");
       },
       onCreate: (db, version) async {
-        await db.execute('''
+        await db.execute("""
           CREATE TABLE recordings (
             id INTEGER PRIMARY KEY,
             line_number INTEGER,
@@ -38,9 +38,9 @@ class DatabaseProvider {
             start_cord_id INTEGER,
             end_cord_id INTEGER
           );
-        ''');
+        """);
 
-        await db.execute('''
+        await db.execute("""
           CREATE TABLE cords (
             id INTEGER PRIMARY KEY,
             time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -53,11 +53,11 @@ class DatabaseProvider {
               ON UPDATE CASCADE
               ON DELETE CASCADE
           );
-        ''');
+        """);
       },
       onOpen: (db) async {
         // remove recordings that have less than three cords
-        await db.execute("""
+        await db.rawDelete("""
           DELETE FROM recordings WHERE (
             SELECT COUNT(cords.id) FROM cords WHERE cords.recording_id = recordings.id
           ) < 3;

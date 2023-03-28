@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:background_location/background_location.dart';
 import 'package:provider/provider.dart';
-import 'package:stasi/pages/running_recording.dart';
 
-import '../db/database_bloc.dart';
+import 'package:stasi/notifiers/running_recording.dart';
+import 'package:stasi/db/database_bloc.dart';
 
 
 class VehicleSelection extends StatefulWidget {
@@ -72,7 +72,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                   ),
                   ElevatedButton(
                     onPressed: () async {
-                      if(started) {
+                      if (started) {
                         BackgroundLocation.stopLocationService();
                         _killDebounce();
                         await widget.databaseBloc.cleanRecording(recording.recordingId!);
@@ -92,10 +92,21 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                         message: "Stasi is watching you!",
                         icon: "@mipmap/ic_launcher",
                       );
-                      BackgroundLocation.setAndroidConfiguration(800);
+                      BackgroundLocation.setAndroidConfiguration(1200);
                       BackgroundLocation.startLocationService();
 
                       BackgroundLocation.getLocationUpdates((location) async {
+                        /*
+                         * This skips the location values while the
+                         * gps chip is still calibrating.
+                         * Haven't tested this on IOS yet.
+                         */
+                        const minimumAccuracy = 62;
+                        if (location.accuracy! > minimumAccuracy) {
+                          debugPrint("Too inaccurate location: ${location.accuracy!} (> $minimumAccuracy)");
+                          return;
+                        }
+
                         await widget.databaseBloc.createCoordinate(recordingId,
                           latitude: location.latitude!,
                           longitude: location.longitude!,
