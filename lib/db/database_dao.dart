@@ -10,8 +10,8 @@ class DatabaseDao {
     final db = await dbProvider.db;
 
     final recordingDict = await db.rawQuery("""
-      SELECT rec.id, rec.line_number, rec.run_number, rec.is_uploaded,
-        start_cord.time AS start, end_cord.time AS end,
+      SELECT rec.id, rec.line_number, rec.run_number, rec.region_id,
+        rec.is_uploaded, start_cord.time AS start, end_cord.time AS end,
         MIN(cords.time) AS total_start, MAX(cords.time) AS total_end
       FROM recordings AS rec
       LEFT JOIN cords start_cord ON start_cord.id = rec.start_cord_id
@@ -25,6 +25,7 @@ class DatabaseDao {
           id: entry["id"] as int,
           lineNumber: entry["line_number"] as int?,
           runNumber: entry["run_number"] as int?,
+          regionId: entry["region_id"] as int?,
           isUploaded: (entry["is_uploaded"] as int) != 0,
           start: entry["start"] != null ? DateTime.parse(entry["start"] as String) : null,
           end: entry["end"] != null ? DateTime.parse(entry["end"] as String) : null,
@@ -34,12 +35,13 @@ class DatabaseDao {
     ).toList();
   }
 
-  Future<int> createRecording({int? runNumber, int? lineNumber}) async {
+  Future<int> createRecording({int? runNumber, int? lineNumber, int? regionId}) async {
     final db = await dbProvider.db;
 
     final recordingId = await db.insert("recordings", {
       "line_number": lineNumber,
       "run_number": runNumber,
+      "region_id": regionId,
     });
 
     return recordingId;
@@ -59,7 +61,23 @@ class DatabaseDao {
 
     return await db.update(
       "recordings",
-      {"run_number": runNumber, "line_number": lineNumber},
+      {
+        "run_number": runNumber,
+        "line_number": lineNumber,
+      },
+      where: "id = ?",
+      whereArgs: [recordingId],
+    );
+  }
+
+  Future<int> setRecordingRegionId(int recordingId, int? regionId) async {
+    final db = await dbProvider.db;
+
+    return await db.update(
+      "recordings",
+      {
+        "region_id": regionId,
+      },
       where: "id = ?",
       whereArgs: [recordingId],
     );

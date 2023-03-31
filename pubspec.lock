@@ -502,6 +502,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.99"
+  sliding_up_panel2:
+    dependency: "direct main"
+    description:
+      name: sliding_up_panel2
+      sha256: b480252983c982342438b9082ace3eaf7febd50a9075d96663138b2fda420651
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.2"
   source_span:
     dependency: transitive
     description:

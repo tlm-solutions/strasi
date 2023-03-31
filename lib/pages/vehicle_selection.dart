@@ -9,6 +9,35 @@ import 'package:stasi/notifiers/running_recording.dart';
 import 'package:stasi/db/database_bloc.dart';
 
 
+class _IntegerTextField extends StatefulWidget {
+  const _IntegerTextField({
+    required this.fieldName,
+    required this.onChanged,
+    Key? key,
+  }) : super(key: key);
+
+  final String fieldName;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  State<StatefulWidget> createState() => _IntegerTextFieldState();
+}
+
+class _IntegerTextFieldState extends State<_IntegerTextField> {
+
+  @override
+  Widget build(BuildContext context) => TextFormField(
+    decoration: InputDecoration(labelText: widget.fieldName),
+    keyboardType: TextInputType.number,
+    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+    onChanged: (String value) {
+        widget.onChanged(value.isNotEmpty ? int.parse(value) : null);
+    },
+    validator: (value) => value != null && value.isNotEmpty ? null : 'Enter the ${widget.fieldName}',
+  );
+
+}
+
 class VehicleSelection extends StatefulWidget {
   final DatabaseBloc databaseBloc;
 
@@ -21,6 +50,7 @@ class VehicleSelection extends StatefulWidget {
 class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepAliveClientMixin<VehicleSelection> {
   int? lineNumber;
   int? runNumber;
+  int? regionId;
 
   final _dropdownFormKey = GlobalKey<FormState>();
   Timer? _debounce;
@@ -40,35 +70,53 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: "line number"),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onChanged: (String value) {
+                  _IntegerTextField(
+                    fieldName: "line number",
+                    onChanged: (int? lineNumber) {
                       setState(() {
-                        lineNumber = value.isNotEmpty ? int.parse(value) : null;
+                        lineNumber = lineNumber;
                       });
 
                       if (!started) return;
 
                       _scheduleUpdateRecording(recording.recordingId!);
                     },
-                    validator: (value) => value != null && value.isNotEmpty ? null : 'Enter the line number',
                   ),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'run number'),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onChanged: (String value) {
+                  _IntegerTextField(
+                    fieldName: 'run number',
+                    onChanged: (int? runNumber) {
                       setState(() {
-                        runNumber = value.isNotEmpty ? int.parse(value) : null;
+                        runNumber = runNumber;
                       });
 
                       if (!started) return;
 
                       _scheduleUpdateRecording(recording.recordingId!);
                     },
-                    validator: (value) => value != null && value.isNotEmpty ? null : 'Enter the run number',
+                  ),
+                  DropdownButton<int>(
+                    value: regionId,
+                    alignment: AlignmentDirectional.bottomEnd,
+                    isExpanded: true,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 0,
+                        child: Center(child: Text("Dresden")),
+                      ),
+                      DropdownMenuItem(
+                        value: 1,
+                        child: Center(child: Text("Chemnitz")),
+                      ),
+                    ],
+                    onChanged: (newRegion) {
+                      setState(() {
+                        regionId = newRegion;
+                      });
+
+                      if (!started) return;
+
+                      _scheduleUpdateRecording(recording.recordingId!);
+                    },
                   ),
                   ElevatedButton(
                     onPressed: () async {
@@ -83,6 +131,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                       final recordingId = await widget.databaseBloc.createRecording(
                         runNumber: runNumber,
                         lineNumber: lineNumber,
+                        regionId: regionId,
                       );
 
                       recording.setRecordingId(recordingId);
@@ -143,9 +192,11 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
 
   Future<void> _updateRecording(int recordingId) async {
     await widget.databaseBloc.setRecordingRunAndLineNumber(
-        recordingId,
-        runNumber: runNumber,
-        lineNumber: lineNumber,
+      recordingId,
+      runNumber: runNumber,
+      lineNumber: lineNumber,
     );
+
+    await widget.databaseBloc.setRecordingRegionId(recordingId, regionId);
   }
 }

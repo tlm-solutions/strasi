@@ -69,7 +69,7 @@ class ApiClient {
       "stop": recording.totalEnd.toIso8601String(),
       "line": recording.lineNumber,
       "run": recording.runNumber,
-      "region": 0,
+      "region": recording.regionId,
     };
 
     final submitResponse = await http.post(

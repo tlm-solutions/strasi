@@ -51,6 +51,7 @@ dependencies:
   cached_network_image: ^3.2.3
   flutter_file_dialog: ^3.0.0
   introduction_screen: ^3.1.6
+  sliding_up_panel2: ^3.2.0+2
 
 dev_dependencies:
   flutter_test:

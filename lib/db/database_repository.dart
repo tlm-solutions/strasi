@@ -8,9 +8,10 @@ class DatabaseRepository {
 
   Future<List<Recording>> getRecordings() => databaseDao.getRecordings();
 
-  Future<int> createRecording({int? runNumber, int? lineNumber}) => databaseDao.createRecording(
+  Future<int> createRecording({int? runNumber, int? lineNumber, int? regionId}) => databaseDao.createRecording(
     runNumber: runNumber,
     lineNumber: lineNumber,
+    regionId: regionId,
   );
 
   Future<int> deleteRecording(int recordingId) => databaseDao.deleteRecording(recordingId);
@@ -19,9 +20,12 @@ class DatabaseRepository {
     required int? runNumber,
     required int? lineNumber,
   }) => databaseDao.setRecordingRunAndLineNumber(recordingId,
-      runNumber: runNumber,
-      lineNumber: lineNumber
+    runNumber: runNumber,
+    lineNumber: lineNumber,
   );
+
+  Future<int> setRecordingRegionId(int recordingId, int? regionId) =>
+      databaseDao.setRecordingRegionId(recordingId, regionId);
 
   Future<int> setRecordingBounds(int recordingId, {
     required DateTime startTime,

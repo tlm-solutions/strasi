@@ -58,9 +58,9 @@ class _RecordingEditorState extends State<RecordingEditor> {
                   endTime: endTime,
                 );
                 await widget.databaseBloc.setRecordingRunAndLineNumber(
-                    widget.recording.id,
-                    runNumber: runNumber,
-                    lineNumber: lineNumber,
+                  widget.recording.id,
+                  runNumber: runNumber,
+                  lineNumber: lineNumber,
                 );
 
                 if (!mounted) return;

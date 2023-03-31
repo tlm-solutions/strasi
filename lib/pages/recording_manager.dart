@@ -137,14 +137,14 @@ class _RecordingEntry extends StatelessWidget {
   }
 
   bool get _allFieldsAreSet =>
-      recording.lineNumber != null && recording.runNumber != null;
+      recording.lineNumber != null && recording.runNumber != null && recording.regionId != null;
 
   bool get _isUploadable => _allFieldsAreSet && !recording.isUploaded;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 80,
+      height: 100,
       decoration: BoxDecoration(
         border: Border.all(color: dvbYellow.shade500),
         borderRadius: const BorderRadius.all(Radius.circular(5)),
@@ -156,7 +156,7 @@ class _RecordingEntry extends StatelessWidget {
           textBaseline: TextBaseline.alphabetic,
           columnWidths: const {
             1: FlexColumnWidth(2),
-            2: FlexColumnWidth(2),
+            2: FlexColumnWidth(3),
             3: FlexColumnWidth(1),
           },
           children: [
@@ -181,6 +181,21 @@ class _RecordingEntry extends StatelessWidget {
                   icon: const Icon(Icons.delete),
                 ),
               ],
+            ),
+            TableRow(
+              children: [
+                const Offstage(),
+                SizedBox(
+                  height: 30,
+                  child: Text(
+                    "Region id ${recording.regionId}",
+                    style: const TextStyle(fontSize: 18),
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+                const Offstage(),
+                const Offstage(),
+              ]
             ),
             TableRow(
               children: [
@@ -255,6 +270,7 @@ Future<Gpx> _getCoordinatesAsGpx(DatabaseBloc databaseBloc, Recording recording)
       extensions: {
         "line": "${recording.lineNumber}",
         "run": "${recording.runNumber}",
+        "region": "${recording.regionId}",
         "start": recordingStart.toIso8601String(),
         "stop": recordingEnd.toIso8601String(),
       },
