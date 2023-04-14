@@ -50,7 +50,7 @@ class VehicleSelection extends StatefulWidget {
 class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepAliveClientMixin<VehicleSelection> {
   int? lineNumber;
   int? runNumber;
-  int? regionId;
+  int regionId = 0;
 
   final _dropdownFormKey = GlobalKey<FormState>();
   Timer? _debounce;
@@ -74,7 +74,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                     fieldName: "line number",
                     onChanged: (int? lineNumber) {
                       setState(() {
-                        lineNumber = lineNumber;
+                        this.lineNumber = lineNumber;
                       });
 
                       if (!started) return;
@@ -86,7 +86,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                     fieldName: 'run number',
                     onChanged: (int? runNumber) {
                       setState(() {
-                        runNumber = runNumber;
+                        this.runNumber = runNumber;
                       });
 
                       if (!started) return;
@@ -110,7 +110,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                     ],
                     onChanged: (newRegion) {
                       setState(() {
-                        regionId = newRegion;
+                        regionId = newRegion ?? 0;
                       });
 
                       if (!started) return;
