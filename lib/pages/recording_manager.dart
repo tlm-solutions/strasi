@@ -144,7 +144,7 @@ class _RecordingEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100,
+      height: 80,
       decoration: BoxDecoration(
         border: Border.all(color: dvbYellow.shade500),
         borderRadius: const BorderRadius.all(Radius.circular(5)),
@@ -156,7 +156,7 @@ class _RecordingEntry extends StatelessWidget {
           textBaseline: TextBaseline.alphabetic,
           columnWidths: const {
             1: FlexColumnWidth(2),
-            2: FlexColumnWidth(3),
+            2: FlexColumnWidth(2),
             3: FlexColumnWidth(1),
           },
           children: [
@@ -181,21 +181,6 @@ class _RecordingEntry extends StatelessWidget {
                   icon: const Icon(Icons.delete),
                 ),
               ],
-            ),
-            TableRow(
-              children: [
-                const Offstage(),
-                SizedBox(
-                  height: 30,
-                  child: Text(
-                    "Region id ${recording.regionId}",
-                    style: const TextStyle(fontSize: 18),
-                    textAlign: TextAlign.end,
-                  ),
-                ),
-                const Offstage(),
-                const Offstage(),
-              ]
             ),
             TableRow(
               children: [
