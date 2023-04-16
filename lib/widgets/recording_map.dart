@@ -121,14 +121,6 @@ class _MapAttribution extends StatelessWidget {
       color: Colors.black.withOpacity(0.5),
       child: GestureDetector(
         onTap: () async {
-          /*
-           * This is bad practice.
-           * We will have to change this with the next stable release of flutter
-           * to "if(context.mounted)".
-           * https://github.com/flutter/flutter/issues/110694
-           */
-          final scaffoldMessenger = ScaffoldMessenger.of(context);
-
           const osmLink = "https://www.openstreetmap.org/copyright";
 
           final osmUri = Uri.parse(osmLink);
@@ -136,13 +128,15 @@ class _MapAttribution extends StatelessWidget {
             await launchUrl(osmUri, mode: LaunchMode.externalApplication);
             return;
           }
-          await Clipboard.setData(const ClipboardData(text: osmLink));
 
-          scaffoldMessenger.showSnackBar(
-            const SnackBar(content: Text(
-              "Couldn't open browser! Copied link to clipboard.",
-            )),
-          );
+          await Clipboard.setData(const ClipboardData(text: osmLink));
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text(
+                "Couldn't open browser! Copied link to clipboard.",
+              )),
+            );
+          }
         },
         child: Padding(
           padding: const EdgeInsets.all(3.0),

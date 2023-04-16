@@ -20,10 +20,11 @@ class DatabaseBloc {
     _recordingController.sink.add(recordings);
   }
 
-  Future<int> createRecording({int? runNumber, int? lineNumber}) async {
+  Future<int> createRecording({int? runNumber, int? lineNumber, int? regionId}) async {
     final recordingId = await _databaseRepository.createRecording(
       runNumber: runNumber,
       lineNumber: lineNumber,
+      regionId: regionId,
     );
     getRecordings();
 
@@ -45,6 +46,16 @@ class DatabaseBloc {
       recordingId,
       runNumber: runNumber,
       lineNumber: lineNumber,
+    );
+    getRecordings();
+
+    return result;
+  }
+
+  Future<int> setRecordingRegionId(int recordingId, int? regionId) async {
+    final result = await _databaseRepository.setRecordingRegionId(
+      recordingId,
+      regionId,
     );
     getRecordings();
 

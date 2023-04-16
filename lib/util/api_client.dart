@@ -44,7 +44,7 @@ class ApiClient {
 
   Future<void> loginUser(LoginData loginData) async {
     final response = await http.post(
-        Uri(scheme: "https", host: _url, path: "/user/login"),
+        Uri(scheme: "https", host: _url, path: "/v1/user/login"),
         body: jsonEncode(loginData.toMap()),
         headers: {"Content-Type": "application/json"},
     );
@@ -54,7 +54,7 @@ class ApiClient {
   }
 
   Future<LoginData> createAccount() async {
-    final response = await http.post(Uri(scheme: "https", host: _url, path: "/user/create"));
+    final response = await http.post(Uri(scheme: "https", host: _url, path: "/v1/user/create"));
 
     if (response.statusCode != 200) throw http.ClientException(response.body);
     _updateCookie(response.headers);
@@ -64,7 +64,29 @@ class ApiClient {
   }
 
   Future<void> sendGpx(Gpx gpx, Recording recording) async {
-    final gpxUri = Uri(scheme: "https", host: _url, path: "/travel/submit/gpx");
+    final timesJson = {
+      "start": recording.totalStart.toIso8601String(),
+      "stop": recording.totalEnd.toIso8601String(),
+      "line": recording.lineNumber,
+      "run": recording.runNumber,
+      "region": recording.regionId,
+    };
+
+    final submitResponse = await http.post(
+      Uri(scheme: "https", host: _url, path: "/v1/travel/submit/run"),
+      headers: {"cookie": await _getCookie(), "Content-Type": "application/json"},
+      body: jsonEncode(timesJson),
+    );
+
+    if (submitResponse.statusCode != 200) throw http.ClientException(submitResponse.body);
+
+    final trekkieUuid = jsonDecode(submitResponse.body)["trekkie_run"] as String;
+
+    final gpxUri = Uri(
+      scheme: "https",
+      host: _url,
+      pathSegments: ["v1", "travel", "submit", "gpx", trekkieUuid],
+    );
 
     final gpxRequest = http.MultipartRequest("POST", gpxUri)
       ..files.add(http.MultipartFile.fromString(
@@ -81,25 +103,6 @@ class ApiClient {
 
       throw http.ClientException("$errorCode: $errorMessage");
     }
-
-    final timesJson = {
-      "gpx_id": jsonDecode(await gpxResponse.stream.bytesToString())["gpx_id"],
-      "vehicles": [{
-        "start": recording.totalStart.toIso8601String(),
-        "stop": recording.totalEnd.toIso8601String(),
-        "line": recording.lineNumber,
-        "run": recording.runNumber,
-        "region": 0,
-      }],
-    };
-
-    final submitResponse = await http.post(
-      Uri(scheme: "https", host: _url, path: "/travel/submit/run"),
-      headers: {"cookie": await _getCookie(), "Content-Type": "application/json"},
-      body: jsonEncode(timesJson),
-    );
-
-    if (submitResponse.statusCode != 200) throw http.ClientException(submitResponse.body);
   }
 
   void _updateCookie(Map<String, String> headers) {

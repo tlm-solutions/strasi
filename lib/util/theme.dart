@@ -42,7 +42,7 @@ ElevatedButtonThemeData _elevatedButtonTheme(ElevatedButtonThemeData base) =>
     );
 
 TextTheme _textTheme(TextTheme base) =>
-    base.copyWith(button: const TextStyle(fontSize: 14.0));
+    base.copyWith(labelLarge: const TextStyle(fontSize: 14.0));
 
 InputDecorationTheme _inputDecorationTheme(InputDecorationTheme base) =>
     base.copyWith(

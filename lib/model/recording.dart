@@ -3,6 +3,7 @@ class Recording {
     required this.id,
     required this.lineNumber,
     required this.runNumber,
+    required this.regionId,
     required this.isUploaded,
     required this.start,
     required this.end,
@@ -13,6 +14,7 @@ class Recording {
   int id;
   int? lineNumber;
   int? runNumber;
+  int? regionId;
   bool isUploaded;
   DateTime? start;
   DateTime? end;
