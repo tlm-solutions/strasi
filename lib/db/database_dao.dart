@@ -27,10 +27,10 @@ class DatabaseDao {
           runNumber: entry["run_number"] as int?,
           regionId: entry["region_id"] as int?,
           isUploaded: (entry["is_uploaded"] as int) != 0,
-          start: entry["start"] != null ? DateTime.parse(entry["start"] as String) : null,
-          end: entry["end"] != null ? DateTime.parse(entry["end"] as String) : null,
-          totalStart: DateTime.parse(entry["total_start"] as String),
-          totalEnd: DateTime.parse(entry["total_end"] as String),
+          start: entry["start"] != null ? DateTime.parse(entry["start"] as String).toUtc() : null,
+          end: entry["end"] != null ? DateTime.parse(entry["end"] as String).toUtc() : null,
+          totalStart: DateTime.parse(entry["total_start"] as String).toUtc(),
+          totalEnd: DateTime.parse(entry["total_end"] as String).toUtc(),
         ),
     ).toList();
   }
