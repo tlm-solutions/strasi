@@ -48,6 +48,9 @@ jobs:
         with:
           channel: 'stable'
 
+      - name: Extrach commit id
+        run: /usr/bin/git log -1 --format='%H' > .git/ORIG_HEAD
+
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
