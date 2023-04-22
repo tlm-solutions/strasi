@@ -79,6 +79,7 @@ flutter:
   assets:
      - assets/tram_front.png
      - assets/interface_bus.png
+     - .git/ORIG_HEAD
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
