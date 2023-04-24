@@ -108,8 +108,8 @@ class DatabaseDao {
           WHERE id = ?;
         """,
         [
-          startTime.toIso8601String(),
-          endTime.toIso8601String(),
+          startTime.toUtc().toIso8601String(),
+          endTime.toUtc().toIso8601String(),
           recordingId,
         ]
     );
