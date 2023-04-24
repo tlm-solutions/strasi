@@ -140,7 +140,7 @@ class DatabaseDao {
   Coordinate _cordMapToCoordinate(Map<String, Object?> cordMap) {
     return Coordinate(
       id: cordMap["id"] as int,
-      time: DateTime.parse(cordMap["time"] as String),
+      time: DateTime.parse("${cordMap["time"] as String}Z"),
       latitude: cordMap["latitude"] as double,
       longitude: cordMap["longitude"] as double,
       altitude: cordMap["altitude"] as double,
