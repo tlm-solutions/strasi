@@ -66,11 +66,11 @@ class ApiClient {
   }
 
   Future<void> sendGpx(Gpx gpx, Recording recording) async {
-    _commitId ??= await rootBundle.loadString(".git/ORIG_HEAD");
+    _commitId ??= (await rootBundle.loadString(".git/ORIG_HEAD")).trim();
 
     final timesJson = {
-      "start": recording.totalStart.toIso8601String(),
-      "stop": recording.totalEnd.toIso8601String(),
+      "start": (recording.start ?? recording.totalStart).toIso8601String(),
+      "stop": (recording.end ?? recording.totalEnd).toIso8601String(),
       "line": recording.lineNumber,
       "run": recording.runNumber,
       "region": recording.regionId,
