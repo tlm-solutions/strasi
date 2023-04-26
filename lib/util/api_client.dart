@@ -46,7 +46,7 @@ class ApiClient {
 
   Future<void> loginUser(LoginData loginData) async {
     final response = await http.post(
-        Uri(scheme: "https", host: _url, path: "/v1/user/login"),
+        Uri(scheme: "https", host: _url, path: "/v2/auth/login"),
         body: jsonEncode(loginData.toMap()),
         headers: {"Content-Type": "application/json"},
     );
@@ -56,7 +56,7 @@ class ApiClient {
   }
 
   Future<LoginData> createAccount() async {
-    final response = await http.post(Uri(scheme: "https", host: _url, path: "/v1/user/create"));
+    final response = await http.post(Uri(scheme: "https", host: _url, path: "/v2/user"));
 
     if (response.statusCode != 200) throw http.ClientException(response.body);
     _updateCookie(response.headers);
@@ -80,7 +80,7 @@ class ApiClient {
     };
 
     final submitResponse = await http.post(
-      Uri(scheme: "https", host: _url, path: "/v1/travel/submit/run"),
+      Uri(scheme: "https", host: _url, path: "/v2/trekkie"),
       headers: {"cookie": await _getCookie(), "Content-Type": "application/json"},
       body: jsonEncode(timesJson),
     );
@@ -92,7 +92,7 @@ class ApiClient {
     final gpxUri = Uri(
       scheme: "https",
       host: _url,
-      pathSegments: ["v1", "travel", "submit", "gpx", trekkieUuid],
+      pathSegments: ["v2", "trekkie", trekkieUuid, "gpx"],
     );
 
     final gpxRequest = http.MultipartRequest("POST", gpxUri)
