@@ -136,9 +136,17 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  var _currentIndex = 0;
+  late PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final PageController controller = PageController();
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -146,7 +154,12 @@ class _MyHomePageState extends State<MyHomePage> {
       body: ChangeNotifierProvider(
         create: (context) => RunningRecording(),
         child: PageView(
-          controller: controller,
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
           children: [
             VehicleSelection(databaseBloc: widget.databaseBloc),
             RecordingManager(databaseBloc: widget.databaseBloc),
@@ -160,6 +173,39 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+            _pageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.ease,
+            );
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.tram),
+            label: "Track",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: "Runs",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.info),
+            label: "Legal",
+          ),
+        ],
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 }
