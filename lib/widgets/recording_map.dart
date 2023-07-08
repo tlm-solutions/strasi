@@ -138,11 +138,11 @@ class _MapAttribution extends StatelessWidget {
             );
           }
         },
-        child: Padding(
-          padding: const EdgeInsets.all(3.0),
+        child: const Padding(
+          padding: EdgeInsets.all(3.0),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text("flutter_map | © "),
               MouseRegion(
                 cursor: SystemMouseCursors.click,
