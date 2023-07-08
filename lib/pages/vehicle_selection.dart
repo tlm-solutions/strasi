@@ -1,14 +1,13 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:background_location/background_location.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
 import 'package:stasi/notifiers/running_recording.dart';
 import 'package:stasi/db/database_bloc.dart';
+import 'package:stasi/util/location_client.dart';
 
 
 class _IntegerTextField extends StatefulWidget {
@@ -145,7 +144,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                   ElevatedButton(
                     onPressed: () async {
                       if (started) {
-                        Geolocator.getPositionStream().
+                        await LocationClient().stopLocationUpdates();
                         _killDebounce();
                         await widget.databaseBloc.cleanRecording(recording.recordingId!);
                         recording.setRecordingId(null);
@@ -157,22 +156,6 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                         return;
                       }
 
-                      final locationSettings = Platform.isAndroid ?
-                        AndroidSettings(
-                              accuracy: LocationAccuracy.high,
-                              distanceFilter: 50,
-                              forceLocationManager: true,
-                              intervalDuration: const Duration(seconds: 2),
-                              foregroundNotificationConfig: const ForegroundNotificationConfig(
-                                  notificationTitle: "Stasi",
-                                  notificationText: "Stasi is watching you!",
-                              ),
-                            ) :
-                        AppleSettings(
-                          accuracy: LocationAccuracy.high,
-                          activityType: ActivityType.automotiveNavigation,
-                        );
-
                       final recordingId = await widget.databaseBloc.createRecording(
                         runNumber: runNumber,
                         lineNumber: lineNumber,
@@ -181,13 +164,14 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
 
                       recording.setRecordingId(recordingId);
 
-                      final serviceStatusStream = Geolocator.getPositionStream().listen(
+                      await LocationClient().getLocationUpdates(
                           (position) async {
                             /*
                              * This skips the location values while the
                              * gps chip is still calibrating.
                              * Haven't tested this on IOS yet.
                              */
+
                             const minimumAccuracy = 62;
                             if (position.accuracy > minimumAccuracy) {
                               debugPrint("Too inaccurate location: ${position.accuracy} (> $minimumAccuracy)");

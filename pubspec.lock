@@ -9,15 +9,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.10.0"
-  background_location:
-    dependency: "direct main"
-    description:
-      path: "."
-      ref: "73062c932711d8de6a7232d0f97dc5e1f0cd219f"
-      resolved-ref: "73062c932711d8de6a7232d0f97dc5e1f0cd219f"
-      url: "https://github.com/Almoullim/background_location.git"
-    source: git
-    version: "0.9.0"
   boolean_selector:
     dependency: transitive
     description:

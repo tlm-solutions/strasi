@@ -31,10 +31,6 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.2
-  background_location:
-    git:
-      url: https://github.com/Almoullim/background_location.git
-      ref: 73062c932711d8de6a7232d0f97dc5e1f0cd219f
   http: ^0.13.5
   sqflite: ^2.2.1
   path: ^1.8.2
