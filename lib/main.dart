@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -167,9 +168,20 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             VehicleSelection(databaseBloc: widget.databaseBloc),
             RecordingManager(databaseBloc: widget.databaseBloc),
-            const LicensePage(
-              applicationName: "Stasi",
-              applicationLegalese: """Copyright 2023 TLM Solutions
+            FutureBuilder(
+              future: rootBundle.loadString(".git/ORIG_HEAD"),
+              builder: (context, AsyncSnapshot<String> snapshot) {
+                if (snapshot.hasError) {
+                  throw snapshot.error!;
+                } else if (!snapshot.hasData) {
+                  return const CircularProgressIndicator();
+                }
+
+                final commitId = snapshot.data!.trim().substring(0, 8);
+
+                return LicensePage(
+                  applicationName: "Stasi ($commitId)",
+                  applicationLegalese: """Copyright 2023 TLM Solutions
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -182,7 +194,9 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.""",
-            ),
+                );
+              },
+            )
           ],
         ),
       ),
