@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +8,7 @@ import 'package:stasi/notifiers/running_recording.dart';
 import 'package:stasi/util/theme.dart';
 import 'package:stasi/pages/recording_manager.dart';
 import 'package:stasi/pages/vehicle_selection.dart';
+import 'package:stasi/util/app_version.dart';
 
 
 void main() async {
@@ -169,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
             VehicleSelection(databaseBloc: widget.databaseBloc),
             RecordingManager(databaseBloc: widget.databaseBloc),
             FutureBuilder(
-              future: rootBundle.loadString(".git/ORIG_HEAD"),
+              future: AppVersion.getCommitId(),
               builder: (context, AsyncSnapshot<String> snapshot) {
                 if (snapshot.hasError) {
                   throw snapshot.error!;
