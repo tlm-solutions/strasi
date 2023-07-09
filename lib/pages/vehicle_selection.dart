@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
 import 'package:stasi/notifiers/running_recording.dart';
@@ -46,27 +45,6 @@ class VehicleSelection extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() => _VehicleSelectionState();
-}
-
-
-Future<bool> _getLocationPermissions() async {
-  if (!(await Geolocator.isLocationServiceEnabled())) {
-    return false;
-  }
-
-  var permissions = await Geolocator.checkPermission();
-  if (permissions == LocationPermission.denied) {
-    permissions = await Geolocator.requestPermission();
-    if (permissions == LocationPermission.denied) {
-      return false;
-    }
-  }
-
-  if (permissions == LocationPermission.deniedForever) {
-    return false;
-  }
-
-  return true;
 }
 
 
@@ -151,11 +129,6 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                         return;
                       }
 
-                      if (!(await _getLocationPermissions())) {
-                        // definitively gotta create a better system
-                        return;
-                      }
-
                       final recordingId = await widget.databaseBloc.createRecording(
                         runNumber: runNumber,
                         lineNumber: lineNumber,
@@ -164,13 +137,18 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
 
                       recording.setRecordingId(recordingId);
 
-                      await LocationClient().getLocationUpdates(
+                      final permissionSuccess = await LocationClient().getLocationUpdates(
                           (position) async {
                             /*
                              * This skips the location values while the
                              * gps chip is still calibrating.
                              * Haven't tested this on IOS yet.
                              */
+
+                            if (position == null) {
+                              debugPrint("Unknown location!");
+                              return;
+                            }
 
                             const minimumAccuracy = 62;
                             if (position.accuracy > minimumAccuracy) {
@@ -184,8 +162,18 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                               altitude: position.altitude,
                               speed: position.speed,
                             );
+                            debugPrint("Created coordinate ${position.latitude} ${position.longitude}");
                           }
                       );
+
+                      if (!permissionSuccess) {
+                        recording.setRecordingId(null);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Couldn't start location services because of missing permissions!")),
+                          );
+                        }
+                      }
                     },
                     child: started ? const Text("LEAVING VEHICLE") : const Text("ENTERING VEHICLE"),
                   ),

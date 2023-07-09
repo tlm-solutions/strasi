@@ -49,6 +49,7 @@ dependencies:
   introduction_screen: ^3.1.6
   sliding_up_panel2: ^3.2.0+2
   geolocator: ^9.0.2
+  permission_handler: ^10.4.2
 
 dev_dependencies:
   flutter_test:
