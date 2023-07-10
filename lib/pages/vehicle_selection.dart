@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:background_location/background_location.dart';
 import 'package:provider/provider.dart';
 
 import 'package:stasi/notifiers/running_recording.dart';
 import 'package:stasi/db/database_bloc.dart';
+import 'package:stasi/util/location_client.dart';
 
 
 class _IntegerTextField extends StatefulWidget {
@@ -46,6 +46,7 @@ class VehicleSelection extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => _VehicleSelectionState();
 }
+
 
 class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepAliveClientMixin<VehicleSelection> {
   int? lineNumber;
@@ -121,7 +122,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                   ElevatedButton(
                     onPressed: () async {
                       if (started) {
-                        BackgroundLocation.stopLocationService();
+                        await LocationClient().stopLocationUpdates();
                         _killDebounce();
                         await widget.databaseBloc.cleanRecording(recording.recordingId!);
                         recording.setRecordingId(null);
@@ -136,33 +137,43 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
 
                       recording.setRecordingId(recordingId);
 
-                      BackgroundLocation.setAndroidNotification(
-                        title: "Stasi",
-                        message: "Stasi is watching you!",
-                        icon: "@mipmap/ic_launcher",
+                      final permissionSuccess = await LocationClient().getLocationUpdates(
+                          (position) async {
+                            /*
+                             * This skips the location values while the
+                             * gps chip is still calibrating.
+                             * Haven't tested this on IOS yet.
+                             */
+
+                            if (position == null) {
+                              debugPrint("Unknown location!");
+                              return;
+                            }
+
+                            const minimumAccuracy = 62;
+                            if (position.accuracy > minimumAccuracy) {
+                              debugPrint("Too inaccurate location: ${position.accuracy} (> $minimumAccuracy)");
+                              return;
+                            }
+
+                            await widget.databaseBloc.createCoordinate(recordingId,
+                              latitude: position.latitude,
+                              longitude: position.longitude,
+                              altitude: position.altitude,
+                              speed: position.speed,
+                            );
+                            debugPrint("Created coordinate ${position.latitude} ${position.longitude}");
+                          }
                       );
-                      BackgroundLocation.setAndroidConfiguration(1200);
-                      BackgroundLocation.startLocationService();
 
-                      BackgroundLocation.getLocationUpdates((location) async {
-                        /*
-                         * This skips the location values while the
-                         * gps chip is still calibrating.
-                         * Haven't tested this on IOS yet.
-                         */
-                        const minimumAccuracy = 62;
-                        if (location.accuracy! > minimumAccuracy) {
-                          debugPrint("Too inaccurate location: ${location.accuracy!} (> $minimumAccuracy)");
-                          return;
+                      if (!permissionSuccess) {
+                        recording.setRecordingId(null);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Couldn't start location services because of missing permissions!")),
+                          );
                         }
-
-                        await widget.databaseBloc.createCoordinate(recordingId,
-                          latitude: location.latitude!,
-                          longitude: location.longitude!,
-                          altitude: location.altitude!,
-                          speed: location.speed!,
-                        );
-                      });
+                      }
                     },
                     child: started ? const Text("LEAVING VEHICLE") : const Text("ENTERING VEHICLE"),
                   ),

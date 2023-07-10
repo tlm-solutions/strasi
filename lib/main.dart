@@ -8,6 +8,7 @@ import 'package:stasi/notifiers/running_recording.dart';
 import 'package:stasi/util/theme.dart';
 import 'package:stasi/pages/recording_manager.dart';
 import 'package:stasi/pages/vehicle_selection.dart';
+import 'package:stasi/util/app_version.dart';
 
 
 void main() async {
@@ -167,9 +168,20 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             VehicleSelection(databaseBloc: widget.databaseBloc),
             RecordingManager(databaseBloc: widget.databaseBloc),
-            const LicensePage(
-              applicationName: "Stasi",
-              applicationLegalese: """Copyright 2023 TLM Solutions
+            FutureBuilder(
+              future: AppVersion.getCommitId(),
+              builder: (context, AsyncSnapshot<String> snapshot) {
+                if (snapshot.hasError) {
+                  throw snapshot.error!;
+                } else if (!snapshot.hasData) {
+                  return const CircularProgressIndicator();
+                }
+
+                final commitId = snapshot.data!.trim().substring(0, 8);
+
+                return LicensePage(
+                  applicationName: "Stasi ($commitId)",
+                  applicationLegalese: """Copyright 2023 TLM Solutions
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -182,7 +194,9 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.""",
-            ),
+                );
+              },
+            )
           ],
         ),
       ),
