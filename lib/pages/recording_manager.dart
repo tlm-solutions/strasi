@@ -11,7 +11,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:stasi/db/database_bloc.dart';
 import 'package:stasi/routes/recording_editor_route.dart';
-import 'package:stasi/notifiers/running_recording.dart';
+import 'package:stasi/notifiers/tracking_state_notifier.dart';
 import 'package:stasi/util/theme.dart';
 import 'package:stasi/util/api_client.dart';
 import 'package:stasi/model/recording.dart';
@@ -37,7 +37,7 @@ class _RecordingManagerState extends State<RecordingManager> {
             throw snapshot.error!;
           } else if (snapshot.hasData) {
 
-            return Consumer<RunningRecording>(
+            return Consumer<TrackingStateNotifier>(
               builder: (context, curRecording, child) {
                 final recordings = snapshot.data!.reversed
                     .where((recording) => recording.id != curRecording.recordingId)
@@ -296,5 +296,5 @@ Future<String?> _exportCoordinatesToFile(DatabaseBloc databaseBloc, Recording re
 Future<void> _uploadRecording(DatabaseBloc databaseBloc, Recording recording) async {
   final gpx = await _getCoordinatesAsGpx(databaseBloc, recording);
 
-  await ApiClient().sendGpx(gpx, recording);
+  await ApiClient().sendGpx(gpx, recording.toRun()!);
 }

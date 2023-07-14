@@ -3,10 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:stasi/api_model/live_gps_point.dart';
 
-import 'package:stasi/notifiers/running_recording.dart';
+import 'package:stasi/notifiers/tracking_state_notifier.dart';
 import 'package:stasi/db/database_bloc.dart';
+import 'package:stasi/util/api_client.dart';
 import 'package:stasi/util/location_client.dart';
+
+import '../api_model/run.dart';
+
+
+const _minimumAccuracy = 62;
 
 
 class _IntegerTextField extends StatefulWidget {
@@ -59,7 +66,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Consumer<RunningRecording>(
+    return Consumer<TrackingStateNotifier>(
       builder: (context, recording, child) {
         final started = recording.recordingId != null;
 
@@ -120,12 +127,12 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                     },
                   ),
                   ElevatedButton(
-                    onPressed: () async {
+                    onPressed: recording.trackingKind == TrackingKind.live ? null : () async {
                       if (started) {
                         await LocationClient().stopLocationUpdates();
                         _killDebounce();
                         await widget.databaseBloc.cleanRecording(recording.recordingId!);
-                        recording.setRecordingId(null);
+                        recording.setEmpty();
                         return;
                       }
 
@@ -150,9 +157,8 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                               return;
                             }
 
-                            const minimumAccuracy = 62;
-                            if (position.accuracy > minimumAccuracy) {
-                              debugPrint("Too inaccurate location: ${position.accuracy} (> $minimumAccuracy)");
+                            if (position.accuracy > _minimumAccuracy) {
+                              debugPrint("Too inaccurate location: ${position.accuracy} (> $_minimumAccuracy)");
                               return;
                             }
 
@@ -167,7 +173,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                       );
 
                       if (!permissionSuccess) {
-                        recording.setRecordingId(null);
+                        recording.setEmpty();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text("Couldn't start location services because of missing permissions!")),
@@ -175,7 +181,70 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                         }
                       }
                     },
-                    child: started ? const Text("LEAVING VEHICLE") : const Text("ENTERING VEHICLE"),
+                    child: recording.trackingKind == TrackingKind.recording ? const Text("LEAVING VEHICLE") : const Text("ENTERING VEHICLE"),
+                  ),
+                  ElevatedButton(
+                    onPressed: recording.trackingKind == TrackingKind.recording
+                        || runNumber == null
+                        || lineNumber == null ? null : () async {
+                      if (started) {
+                        await LocationClient().stopLocationUpdates();
+                        await ApiClient().finishLiveRun(recording.trekkieUuid!);
+                        _killDebounce();
+                        recording.setEmpty();
+                        return;
+                      }
+
+                      final apiClient = ApiClient();
+                      final trekkieUuid = await apiClient.createLiveRun(Run(
+                        runNumber: runNumber!,
+                        lineNumber: lineNumber!,
+                        regionId: regionId,
+                        start: DateTime(0),
+                        end: DateTime(0),
+                      ));
+
+                      recording.setTrekkieUuid(trekkieUuid);
+
+                      final permissionSuccess = await LocationClient().getLocationUpdates((position) async {
+                        /*
+                         * This skips the location values while the
+                         * gps chip is still calibrating.
+                         * Haven't tested this on IOS yet.
+                         */
+
+                        if (position == null) {
+                          debugPrint("Unknown location!");
+                          return;
+                        }
+
+                        if (position.accuracy > _minimumAccuracy) {
+                          debugPrint("Too inaccurate location: ${position.accuracy} (> $_minimumAccuracy)");
+                          return;
+                        }
+                        
+                        await apiClient.sendLiveCords(trekkieUuid, LiveGpsPoint(
+                          time: position.timestamp!,
+                          latitude: position.latitude,
+                          longitude: position.longitude,
+                          altitude: position.altitude,
+                          accuracy: position.accuracy,
+                          speed: position.speed,
+                        ));
+                        debugPrint("Send coordinate ${position.latitude} ${position.longitude}");
+                      });
+
+                      if (!permissionSuccess) {
+                        await apiClient.finishLiveRun(trekkieUuid);
+                        recording.setEmpty();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Couldn't start location services because of missing permissions!")),
+                          );
+                        }
+                      }
+                    },
+                    child: recording.trackingKind == TrackingKind.live ? const Text("End live tracking") :  const Text("Live tracking")
                   ),
                 ],
               ),

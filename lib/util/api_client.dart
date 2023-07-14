@@ -6,22 +6,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:gpx/gpx.dart';
+import 'package:stasi/api_model/live_gps_point.dart';
+import 'package:stasi/api_model/login_data.dart';
+import 'package:stasi/api_model/run.dart';
 import 'package:stasi/util/app_version.dart';
-
-import '../model/recording.dart';
-
-
-class LoginData {
-  const LoginData({
-    required this.userId,
-    required this.password,
-  });
-
-  final String userId;
-  final String password;
-
-  Map<String, String> toMap() => {"user_id": userId, "password": password};
-}
 
 
 class ApiClient {
@@ -37,6 +25,14 @@ class ApiClient {
     } else {
         return "trekkie.staging.tlm.solutions";
     }
+  }
+
+  static Uri _getLiveUri(String trekkieUuid) {
+    return Uri(
+      scheme: "https",
+      host: getURL(),
+      pathSegments: ["v2", "trekkie", trekkieUuid, "live"],
+    );
   }
 
   ApiClient._internal(): _url = getURL();
@@ -64,27 +60,8 @@ class ApiClient {
     return LoginData(userId: responseDict["user_id"], password: responseDict["password"]);
   }
 
-  Future<void> sendGpx(Gpx gpx, Recording recording) async {
-    final timesJson = {
-      "start": (recording.start ?? recording.totalStart).toIso8601String(),
-      "stop": (recording.end ?? recording.totalEnd).toIso8601String(),
-      "line": recording.lineNumber,
-      "run": recording.runNumber,
-      "region": recording.regionId,
-      "app_commit": await AppVersion.getCommitId(),
-      "app_name": "stasi",
-      "finished": true,
-    };
-
-    final submitResponse = await http.post(
-      Uri(scheme: "https", host: _url, path: "/v2/trekkie"),
-      headers: {"cookie": await _getCookie(), "Content-Type": "application/json"},
-      body: jsonEncode(timesJson),
-    );
-
-    if (submitResponse.statusCode != 200) throw http.ClientException(submitResponse.body);
-
-    final trekkieUuid = jsonDecode(submitResponse.body)["trekkie_run"] as String;
+  Future<void> sendGpx(Gpx gpx, Run run) async {
+    final trekkieUuid = await _submitRun(run: run);
 
     final gpxUri = Uri(
       scheme: "https",
@@ -107,6 +84,69 @@ class ApiClient {
 
       throw http.ClientException("$errorCode: $errorMessage");
     }
+  }
+
+  Future<String> createLiveRun(Run run) async {
+    final trekkieUuid = await _submitRun(run: run, live: true);
+    return trekkieUuid;
+  }
+
+  Future<void> finishLiveRun(String trekkieUuid) async {
+    final liveUri = _getLiveUri(trekkieUuid);
+
+    final liveResponse = await http.delete(liveUri,
+      headers: {"cookie": await _getCookie()},
+    );
+
+    if (liveResponse.statusCode != 200) {
+      final errorCode = liveResponse.statusCode;
+      final errorMessage = liveResponse.body;
+
+      throw http.ClientException("$errorCode: $errorMessage");
+    }
+  }
+
+  Future<void> sendLiveCords(String trekkieUuid, LiveGpsPoint liveGpsPoint) async {
+    final liveUri = _getLiveUri(trekkieUuid);
+    final liveResponse = await http.post(liveUri,
+      headers: {"cookie": await _getCookie()},
+      body: liveGpsPoint.toMap(),
+    );
+
+    if (liveResponse.statusCode != 200) {
+      final errorCode = liveResponse.statusCode;
+      final errorMessage = liveResponse.body;
+
+      throw http.ClientException("$errorCode: $errorMessage");
+    }
+  }
+
+  Future<String> _submitRun({
+    required Run run,
+    bool live = false,
+  }) async {
+    final timesJson = {
+      "start": run.start.toIso8601String(),
+      "stop": run.end.toIso8601String(),
+      "line": run.lineNumber,
+      "run": run.runNumber,
+      "region": run.regionId,
+      "app_commit": await AppVersion.getCommitId(),
+      "app_name": "stasi",
+      "finished": !live,
+    };
+
+    final submitResponse = await http.post(
+      Uri(scheme: "https", host: _url, path: "/v2/trekkie"),
+      headers: {"cookie": await _getCookie(), "Content-Type": "application/json"},
+      body: jsonEncode(timesJson),
+    );
+
+    if (submitResponse.statusCode != 200) throw http.ClientException(submitResponse.body);
+
+    final trekkieUuid = jsonDecode(submitResponse.body)["trekkie_run"] as String;
+
+    return trekkieUuid;
   }
 
   void _updateCookie(Map<String, String> headers) {
