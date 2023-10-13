@@ -68,7 +68,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
     super.build(context);
     return Consumer<TrackingStateNotifier>(
       builder: (context, recording, child) {
-        final started = recording.recordingId != null;
+        final started = recording.trackingKind != null;
 
         return Form(
           key: _dropdownFormKey,
@@ -187,6 +187,8 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                     onPressed: recording.trackingKind == TrackingKind.recording
                         || runNumber == null
                         || lineNumber == null ? null : () async {
+                      debugPrint("wow");
+
                       if (started) {
                         await LocationClient().stopLocationUpdates();
                         await ApiClient().finishLiveRun(recording.trekkieUuid!);

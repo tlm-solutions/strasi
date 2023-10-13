@@ -20,13 +20,16 @@ class LiveGpsPoint {
   final double? speed;
 
   Map<String, dynamic> toMap() => {
-    "time": time.toIso8601String(),
+    "timestamp": time.toIso8601String(),
     "lat": latitude,
     "lon": longitude,
+    /*
     "elevation": altitude,
     "accuracy": accuracy,
     "vertical_accuracy": verticalAccuracy,
     "bearing": bearing,
     "speed": speed,
+
+     */
   };
 }

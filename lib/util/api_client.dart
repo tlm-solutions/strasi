@@ -27,11 +27,11 @@ class ApiClient {
     }
   }
 
-  static Uri _getLiveUri(String trekkieUuid) {
+  static Uri _getTrekkieUri(String trekkieUuid, {String? subPath}) {
     return Uri(
       scheme: "https",
       host: getURL(),
-      pathSegments: ["v2", "trekkie", trekkieUuid, "live"],
+      pathSegments: ["v2", "trekkie", trekkieUuid, subPath ?? ""],
     );
   }
 
@@ -63,11 +63,7 @@ class ApiClient {
   Future<void> sendGpx(Gpx gpx, Run run) async {
     final trekkieUuid = await _submitRun(run: run);
 
-    final gpxUri = Uri(
-      scheme: "https",
-      host: _url,
-      pathSegments: ["v2", "trekkie", trekkieUuid, "gpx"],
-    );
+    final gpxUri = _getTrekkieUri(trekkieUuid, subPath: "gpx");
 
     final gpxRequest = http.MultipartRequest("POST", gpxUri)
       ..files.add(http.MultipartFile.fromString(
@@ -92,10 +88,11 @@ class ApiClient {
   }
 
   Future<void> finishLiveRun(String trekkieUuid) async {
-    final liveUri = _getLiveUri(trekkieUuid);
+    final liveUri = _getTrekkieUri(trekkieUuid);
 
-    final liveResponse = await http.delete(liveUri,
-      headers: {"cookie": await _getCookie()},
+    final liveResponse = await http.delete(Uri(scheme: "https", host: getURL(),
+    pathSegments: ["v2", "trekkie", trekkieUuid]),
+    headers: {"cookie": await _getCookie()},
     );
 
     if (liveResponse.statusCode != 200) {
@@ -107,10 +104,11 @@ class ApiClient {
   }
 
   Future<void> sendLiveCords(String trekkieUuid, LiveGpsPoint liveGpsPoint) async {
-    final liveUri = _getLiveUri(trekkieUuid);
+    final liveUri = _getTrekkieUri(trekkieUuid, subPath: "live");
+    final requestBody = jsonEncode(liveGpsPoint.toMap());
     final liveResponse = await http.post(liveUri,
       headers: {"cookie": await _getCookie()},
-      body: liveGpsPoint.toMap(),
+      body: requestBody,
     );
 
     if (liveResponse.statusCode != 200) {
