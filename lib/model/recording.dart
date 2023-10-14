@@ -1,3 +1,5 @@
+import 'package:stasi/api_model/run.dart';
+
 class Recording {
   Recording({
     required this.id,
@@ -20,4 +22,17 @@ class Recording {
   DateTime? end;
   DateTime totalStart;
   DateTime totalEnd;
+
+  bool canConvertToRun() =>
+      lineNumber != null
+      && runNumber != null
+      && regionId != null;
+
+  Run? toRun() => canConvertToRun() ? Run(
+      lineNumber: lineNumber!,
+      runNumber: runNumber!,
+      regionId: regionId!,
+      start: start ?? totalStart,
+      end: end ?? totalEnd,
+  ) : null;
 }

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:stasi/db/database_bloc.dart';
-import 'package:stasi/notifiers/running_recording.dart';
+import 'package:stasi/notifiers/tracking_state_notifier.dart';
 import 'package:stasi/pages/live_view.dart';
 import 'package:stasi/util/theme.dart';
 import 'package:stasi/pages/recording_manager.dart';
@@ -158,7 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: ChangeNotifierProvider(
-        create: (context) => RunningRecording(),
+        create: (context) => TrackingStateNotifier(),
         child: PageView(
           controller: _pageController,
           onPageChanged: (index) {
