@@ -92,6 +92,26 @@ Future<SvgPicture> _getImageFromTypeAndDelay(VehiclePosition vehicle) async {
   return _unknown;
 }
 
+class _VehicleImageName {
+  _VehicleImageName(this.name, this.image);
+
+  final String name;
+  final SvgPicture image;
+
+  static Future<_VehicleImageName> fromVehiclePosition(VehiclePosition vehicle) async {
+    final image = await _getImageFromTypeAndDelay(vehicle);
+    final typeMapping = await _TypeMappingContainer.getTypeMapping();
+    final vehicleType = typeMapping[vehicle.line];
+
+    var vehicleName = "${vehicle.line}";
+    if (vehicleType != null) {
+      vehicleName = vehicleType.name;
+    }
+
+    return _VehicleImageName(vehicleName, image);
+  }
+}
+
 
 class _LiveViewMapState extends State<LiveViewMap> {
   late MapController _mapController;
@@ -126,24 +146,28 @@ class _LiveViewMapState extends State<LiveViewMap> {
             for (final vehiclePosition in widget.vehicleList)
               Marker(
                 point: LatLng(vehiclePosition.latitude, vehiclePosition.longitude),
-                child: Stack(
-                  children: [
-                    FutureBuilder(
-                      future: _getImageFromTypeAndDelay(vehiclePosition),
-                      builder: (context, AsyncSnapshot<SvgPicture> snapshot) {
-                        if (snapshot.hasError) throw snapshot.error!;
-                        if (!snapshot.hasData) return const Offstage();
+                child: FutureBuilder(
+                  future: _VehicleImageName.fromVehiclePosition(vehiclePosition),
+                  builder: (context, AsyncSnapshot<_VehicleImageName> snapshot) {
+                    if (snapshot.hasError) throw snapshot.error!;
+                    if (!snapshot.hasData) return const Offstage();
 
-                        return snapshot.data!;
-                      }
-                    ),
-                    Center(child: Text(
-                      "${vehiclePosition.line}",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.black),
-                    )),
-                  ],
-                ),
+                    final vehicleImageName = snapshot.data!;
+
+                    return Stack(
+                      children: [
+                        vehicleImageName.image,
+                        Center(
+                          child: Text(
+                            vehicleImageName.name,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.black),
+                          ),
+                        )
+                      ],
+                    );
+                  },
+                )
               ),
           ],
         ),
