@@ -70,7 +70,7 @@ Future<SvgPicture> _getImageFromTypeAndDelay(VehiclePosition vehicle) async {
       return _tramOnTime;
     } else if (vehicle.delayed! < 0) {
       return _tramEarly;
-    } else if (vehicle.delayed! > 0 && vehicle.delayed! < 7) {
+    } else if (vehicle.delayed! > 0 && vehicle.delayed! < 7 * 60) {
       return _tramLate;
     } else {
       return _tramVeryLate;
@@ -82,7 +82,7 @@ Future<SvgPicture> _getImageFromTypeAndDelay(VehiclePosition vehicle) async {
       return _busOnTime;
     } else if (vehicle.delayed! < 0) {
       return _busEarly;
-    } else if (vehicle.delayed! > 0 && vehicle.delayed! < 7) {
+    } else if (vehicle.delayed! > 0 && vehicle.delayed! < 7 * 60) {
       return _busLate;
     } else {
       return _busVeryLate;
