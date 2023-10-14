@@ -88,8 +88,6 @@ class ApiClient {
   }
 
   Future<void> finishLiveRun(String trekkieUuid) async {
-    final liveUri = _getTrekkieUri(trekkieUuid);
-
     final liveResponse = await http.delete(Uri(scheme: "https", host: getURL(),
     pathSegments: ["v2", "trekkie", trekkieUuid]),
     headers: {"cookie": await _getCookie()},
@@ -107,7 +105,7 @@ class ApiClient {
     final liveUri = _getTrekkieUri(trekkieUuid, subPath: "live");
     final requestBody = jsonEncode(liveGpsPoint.toMap());
     final liveResponse = await http.post(liveUri,
-      headers: {"cookie": await _getCookie()},
+      headers: {"cookie": await _getCookie(), "Content-Type": "application/json; charset=utf-8"},
       body: requestBody,
     );
 
@@ -134,9 +132,11 @@ class ApiClient {
       "finished": !live,
     };
 
+    final cookie = await _getCookie();
+
     final submitResponse = await http.post(
       Uri(scheme: "https", host: _url, path: "/v2/trekkie"),
-      headers: {"cookie": await _getCookie(), "Content-Type": "application/json"},
+      headers: {"cookie": cookie, "Content-Type": "application/json"},
       body: jsonEncode(timesJson),
     );
 
