@@ -174,3 +174,97 @@ class ApiClient {
     return "${_cookie!.name}=${_cookie!.value}";
   }
 }
+
+
+// We need this function since value types in the websocket API
+// are utterly broken
+int _intMaybeFromString(dynamic value) {
+  if (value is String) {
+    return int.parse(value);
+  }
+
+  return value as int;
+}
+
+int? _nullableIntMaybeFromString(dynamic value) {
+  if (value is String) {
+    return int.parse(value);
+  }
+
+  return value as int?;
+}
+
+int? _nullableIntMaybeFromDouble(dynamic value) {
+  if (value is double) {
+    return value.toInt();
+  }
+
+  return value as int?;
+}
+
+class VehiclePosition {
+  const VehiclePosition({
+    required this.id,
+    required this.time,
+    required this.region,
+    required this.latitude,
+    required this.longitude,
+    required this.line,
+    required this.run,
+    required this.delayed,
+    required this.r09ReportingPoint,
+    required this.r09DestinationNumber,
+  });
+
+  final int id;
+  final DateTime time;
+  final int region;
+  final double latitude;
+  final double longitude;
+  final int line;
+  final int run;
+  final int? delayed;
+  final int? r09ReportingPoint;
+  final int? r09DestinationNumber;
+
+  factory VehiclePosition.fromMap(Map<String, dynamic> map) =>
+      VehiclePosition(
+          id: _intMaybeFromString(map["id"]),
+          time: DateTime.fromMillisecondsSinceEpoch(_intMaybeFromString(map["time"])),
+          region: _intMaybeFromString(map["region"]),
+          latitude: map["lat"] as double,
+          longitude: map["lon"] as double,
+          line: _intMaybeFromString(map["line"]),
+          run: _intMaybeFromString(map["run"]),
+          delayed: _nullableIntMaybeFromDouble(map["delayed"]),
+          r09ReportingPoint: _nullableIntMaybeFromString(map["r09_reporting_point"]),
+          r09DestinationNumber: _nullableIntMaybeFromString(map["r09_destination_number"]),
+      );
+
+  @override
+  bool operator ==(Object other) {
+    return other is VehiclePosition && other.line == line && other.run == run;
+  }
+
+  @override
+  int get hashCode => line * 1000 + run;
+
+}
+
+class LizardApiClient {
+  static const _url = "lizard.tlm.solutions";
+
+  static Future<List<VehiclePosition>> getVehiclesPostionsInitial(int region) async {
+    final response = await http.get(
+      Uri(scheme: "https", host: _url, pathSegments: ["v1", "vehicles", region.toString()]),
+    );
+
+    if (response.statusCode != 200) throw http.ClientException(response.body);
+
+    final List<dynamic> responseMaps = jsonDecode(response.body);
+
+    return responseMaps.map((vehiclePositionMap)  {
+      return VehiclePosition.fromMap(vehiclePositionMap as Map<String, dynamic>);
+    }).toList();
+  }
+}
