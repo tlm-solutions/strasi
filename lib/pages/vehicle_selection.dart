@@ -20,11 +20,13 @@ class _IntegerTextField extends StatefulWidget {
   const _IntegerTextField({
     required this.fieldName,
     required this.onChanged,
+    this.readOnly = false,
     Key? key,
   }) : super(key: key);
 
   final String fieldName;
   final ValueChanged<int?> onChanged;
+  final bool readOnly;
 
   @override
   State<StatefulWidget> createState() => _IntegerTextFieldState();
@@ -36,6 +38,7 @@ class _IntegerTextFieldState extends State<_IntegerTextField> {
   Widget build(BuildContext context) => TextFormField(
     decoration: InputDecoration(labelText: widget.fieldName),
     keyboardType: TextInputType.number,
+    readOnly: widget.readOnly,
     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
     onChanged: (String value) {
         widget.onChanged(value.isNotEmpty ? int.parse(value) : null);
@@ -80,6 +83,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                 children: [
                   _IntegerTextField(
                     fieldName: "line number",
+                    readOnly: recording.trackingKind == TrackingKind.live,
                     onChanged: (int? lineNumber) {
                       setState(() {
                         this.lineNumber = lineNumber;
@@ -92,6 +96,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                   ),
                   _IntegerTextField(
                     fieldName: 'run number',
+                    readOnly: recording.trackingKind == TrackingKind.live,
                     onChanged: (int? runNumber) {
                       setState(() {
                         this.runNumber = runNumber;
