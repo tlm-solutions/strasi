@@ -40,10 +40,11 @@ class _RecordingMapState extends State<RecordingMap> {
   }
 
   void _updateBounds() {
+    /*
     _mapController.fitCamera(CameraFit.bounds(
       bounds: _getBoundsFromPoints(widget.pointList),
       padding: const EdgeInsets.all(80.0),
-    ));
+    ));*/
   }
 
   @override

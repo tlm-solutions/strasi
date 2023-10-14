@@ -209,10 +209,11 @@ packages:
   flutter_map:
     dependency: "direct main"
     description:
-      name: flutter_map
-      sha256: e625957146c7d2e847da2cdefd893d6f5315ced6ee5228d2c05fec760cab3ad7
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "1bf5966011fad832cc1d868e3c19bb4b740fc4ac"
+      resolved-ref: "1bf5966011fad832cc1d868e3c19bb4b740fc4ac"
+      url: "https://github.com/BartoszStasiurka/flutter_map.git"
+    source: git
     version: "6.0.0"
   flutter_svg:
     dependency: "direct main"
