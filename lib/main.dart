@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:stasi/db/database_bloc.dart';
 import 'package:stasi/notifiers/running_recording.dart';
+import 'package:stasi/pages/live_view.dart';
 import 'package:stasi/util/theme.dart';
 import 'package:stasi/pages/recording_manager.dart';
 import 'package:stasi/pages/vehicle_selection.dart';
@@ -168,6 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             VehicleSelection(databaseBloc: widget.databaseBloc),
             RecordingManager(databaseBloc: widget.databaseBloc),
+            const LiveView(),
             FutureBuilder(
               future: AppVersion.getCommitId(),
               builder: (context, AsyncSnapshot<String> snapshot) {
@@ -220,6 +222,10 @@ limitations under the License.""",
           BottomNavigationBarItem(
             icon: Icon(Icons.list),
             label: "Runs",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.live_tv),
+            label: "Live View",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.info),

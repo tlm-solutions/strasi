@@ -31,7 +31,7 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.2
-  http: ^0.13.5
+  http: ^1.1.0
   sqflite: ^2.2.1
   path: ^1.8.2
   gpx: ^2.2.0
@@ -40,8 +40,8 @@ dependencies:
   provider: ^6.0.0
   shared_preferences: ^2.0.15
   http_parser: ^4.0.2
-  flutter_map: ^3.1.0
-  latlong2: ^0.8.1
+  flutter_map: ^6.0.0
+  latlong2: ^0.9.0
   url_launcher: ^6.1.7
   flutter_cache_manager: ^3.3.0
   cached_network_image: ^3.2.3
@@ -50,6 +50,8 @@ dependencies:
   sliding_up_panel2: ^3.2.0+2
   geolocator: ^9.0.2
   permission_handler: ^10.4.2
+  flutter_svg: ^2.0.7
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_test:
@@ -77,6 +79,16 @@ flutter:
   assets:
      - assets/tram_front.png
      - assets/interface_bus.png
+     - assets/bus00.svg
+     - assets/bus07.svg
+     - assets/bus10.svg
+     - assets/bus14.svg
+     - assets/tram00.svg
+     - assets/tram07.svg
+     - assets/tram10.svg
+     - assets/tram14.svg
+     - assets/unknown.svg
+     - assets/0.json
      - .git/ORIG_HEAD
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -1,0 +1,217 @@
+{
+  "1": {
+    "type": "tram",
+    "name": "1"
+  },
+  "2": {
+    "type": "tram",
+    "name": "2"
+  },
+  "3": {
+    "type": "tram",
+    "name": "3"
+  },
+  "4": {
+    "type": "tram",
+    "name": "4"
+  },
+  "6": {
+    "type": "tram",
+    "name": "6"
+  },
+  "7": {
+    "type": "tram",
+    "name": "7"
+  },
+  "8": {
+    "type": "tram",
+    "name": "8"
+  },
+  "9": {
+    "type": "tram",
+    "name": "9"
+  },
+  "10": {
+    "type": "tram",
+    "name": "10"
+  },
+  "11": {
+    "type": "tram",
+    "name": "11"
+  },
+  "12": {
+    "type": "tram",
+    "name": "12"
+  },
+  "13": {
+    "type": "tram",
+    "name": "13"
+  },
+  "16": {
+    "type": "tram",
+    "name": "M",
+    "description": "Museums Fahrt"
+  },
+  "101": {
+    "type": "tram",
+    "name": "EV1"
+  },
+  "102": {
+    "type": "tram",
+    "name": "EV2"
+  },
+  "103": {
+    "type": "tram",
+    "name": "EV3"
+  },
+  "104": {
+    "type": "tram",
+    "name": "EV4"
+  },
+  "106": {
+    "type": "tram",
+    "name": "EV6"
+  },
+  "107": {
+    "type": "tram",
+    "name": "EV7"
+  },
+  "108": {
+    "type": "tram",
+    "name": "EV8"
+  },
+  "109": {
+    "type": "tram",
+    "name": "EV9"
+  },
+  "110": {
+    "type": "tram",
+    "name": "EV10"
+  },
+  "111": {
+    "type": "tram",
+    "name": "EV11"
+  },
+  "112": {
+    "type": "tram",
+    "name": "EV12"
+  },
+  "113": {
+    "type": "tram",
+    "name": "EV13"
+  },
+  "61": {
+    "type": "bus",
+    "name": "61"
+  },
+  "59": {
+    "type": "tram",
+    "name": "B",
+    "description": "Tram Betriebsfahrt"
+  },
+  "60": {
+    "type": "bus",
+    "name": "B",
+    "description": "Bus Betriebsfahrt"
+  },
+  "62": {
+    "type": "bus",
+    "name": "62"
+  },
+  "63": {
+    "type": "bus",
+    "name": "63"
+  },
+  "64": {
+    "type": "bus",
+    "name": "64"
+  },
+  "65": {
+    "type": "bus",
+    "name": "65"
+  },
+  "66": {
+    "type": "bus",
+    "name": "66"
+  },
+  "68": {
+    "type": "bus",
+    "name": "68"
+  },
+  "70": {
+    "type": "bus",
+    "name": "70"
+  },
+  "72": {
+    "type": "bus",
+    "name": "72"
+  },
+  "73": {
+    "type": "bus",
+    "name": "73"
+  },
+  "74": {
+    "type": "bus",
+    "name": "74"
+  },
+  "76": {
+    "type": "bus",
+    "name": "76"
+  },
+  "77": {
+    "type": "bus",
+    "name": "77"
+  },
+  "78": {
+    "type": "bus",
+    "name": "78"
+  },
+  "79": {
+    "type": "bus",
+    "name": "79"
+  },
+  "80": {
+    "type": "bus",
+    "name": "80"
+  },
+  "81": {
+    "type": "bus",
+    "name": "81"
+  },
+  "83": {
+    "type": "bus",
+    "name": "83"
+  },
+  "84": {
+    "type": "bus",
+    "name": "84"
+  },
+  "85": {
+    "type": "bus",
+    "name": "85"
+  },
+  "86": {
+    "type": "bus",
+    "name": "86"
+  },
+  "87": {
+    "type": "bus",
+    "name": "87"
+  },
+  "88": {
+    "type": "bus",
+    "name": "88"
+  },
+  "89": {
+    "type": "bus",
+    "name": "89"
+  },
+  "90": {
+    "type": "bus",
+    "name": "90"
+  },
+  "92": {
+    "type": "bus",
+    "name": "92"
+  }
+}

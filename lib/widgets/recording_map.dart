@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+import 'cached_tile_provider.dart';
+import 'map_attribution.dart';
 
 
 class RecordingMap extends StatefulWidget {
@@ -40,10 +40,10 @@ class _RecordingMapState extends State<RecordingMap> {
   }
 
   void _updateBounds() {
-    _mapController.fitBounds(
-      _getBoundsFromPoints(widget.pointList),
-      options: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
-    );
+    _mapController.fitCamera(CameraFit.bounds(
+      bounds: _getBoundsFromPoints(widget.pointList),
+      padding: const EdgeInsets.all(80.0),
+    ));
   }
 
   @override
@@ -53,18 +53,21 @@ class _RecordingMapState extends State<RecordingMap> {
         FlutterMap(
           mapController: _mapController,
           options: MapOptions(
-            interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-            bounds: _getBoundsFromPoints(widget.pointList),
-            boundsOptions: const FitBoundsOptions(padding: EdgeInsets.all(80.0)),
+            interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all & ~InteractiveFlag.rotate
+            ),
+            initialCameraFit: CameraFit.bounds(
+              bounds: _getBoundsFromPoints(widget.pointList),
+              padding: const EdgeInsets.all(80.0),
+            ),
+            backgroundColor: Colors.black54,
           ),
-          nonRotatedChildren: const [_MapAttribution()],
           children: [
             TileLayer(
               urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
               userAgentPackageName: "solutions.tlm.stasi",
-              tileProvider: _CachedTileProvider(),
+              tileProvider: CachedTileProvider(),
               tileBuilder: darkModeTileBuilder,
-              backgroundColor: Colors.black54,
             ),
             PolylineLayer(
               polylines: [Polyline(
@@ -72,6 +75,7 @@ class _RecordingMapState extends State<RecordingMap> {
                 strokeWidth: 10,
               )],
             ),
+            const MapAttribution(),
           ],
         ),
         Positioned(
@@ -112,59 +116,9 @@ class _RecordingMapState extends State<RecordingMap> {
   }
 }
 
-class _MapAttribution extends StatelessWidget {
-  const _MapAttribution({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) => AttributionWidget(
-    attributionBuilder: (context) => ColoredBox(
-      color: Colors.black.withOpacity(0.5),
-      child: GestureDetector(
-        onTap: () async {
-          const osmLink = "https://www.openstreetmap.org/copyright";
-
-          final osmUri = Uri.parse(osmLink);
-          if (await canLaunchUrl(osmUri)) {
-            await launchUrl(osmUri, mode: LaunchMode.externalApplication);
-            return;
-          }
-
-          await Clipboard.setData(const ClipboardData(text: osmLink));
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text(
-                "Couldn't open browser! Copied link to clipboard.",
-              )),
-            );
-          }
-        },
-        child: const Padding(
-          padding: EdgeInsets.all(3.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("flutter_map | © "),
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: Text(
-                  "OpenStreetMap",
-                  style: TextStyle(
-                    color: Color(0xFF0000EE),
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-              Text(" contributors"),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
 
 LatLngBounds _getBoundsFromPoints(List<LatLng> points) {
-  final bounds = LatLngBounds.fromPoints(points);
+  var bounds = LatLngBounds.fromPoints(points);
 
   /*
     When all the points are the same the southWest and northEast
@@ -173,28 +127,19 @@ LatLngBounds _getBoundsFromPoints(List<LatLng> points) {
     This normally only happens during debugging.
   */
 
-  if (bounds.southWest!.latitude == bounds.northEast!.latitude) {
-    bounds.southWest!.latitude += 0.0005;
-    bounds.northEast!.latitude -= 0.0005;
+  if (bounds.southWest.latitude == bounds.northEast.latitude) {
+    bounds = LatLngBounds(
+      LatLng(bounds.southWest.latitude + 0.0005, bounds.southWest.longitude),
+      LatLng(bounds.northEast.latitude - 0.0005, bounds.northEast.longitude),
+    );
   }
 
-  if (bounds.southWest!.longitude == bounds.northEast!.longitude) {
-    bounds.southWest!.longitude -= 0.0005;
-    bounds.northEast!.longitude += 0.0005;
+  if (bounds.southWest.longitude == bounds.northEast.longitude) {
+    bounds = LatLngBounds(
+      LatLng(bounds.southWest.latitude, bounds.southWest.longitude - 0.0005),
+      LatLng(bounds.northEast.latitude, bounds.northEast.longitude + 0.005),
+    );
   }
 
   return bounds;
-}
-
-class _CachedTileProvider extends TileProvider {
-
-  @override
-  ImageProvider<Object> getImage(Coords<num> coords, TileLayer options) =>
-      CachedNetworkImageProvider(
-        getTileUrl(coords, options),
-        // im not sure if it respects the cache-control headers
-        // let's hope it does
-        headers: headers,
-      );
-
 }
