@@ -120,6 +120,14 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                         value: 1,
                         child: Center(child: Text("Chemnitz")),
                       ),
+                      DropdownMenuItem(
+                        value: 4,
+                        child: Center(child: Text("Hannover City")),
+                      ),
+                      DropdownMenuItem(
+                        value: 9,
+                        child: Center(child: Text("Hannover Region")),
+                      ),
                     ],
                     onChanged: (newRegion) {
                       setState(() {
