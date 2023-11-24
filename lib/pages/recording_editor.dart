@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'package:stasi/db/database_bloc.dart';
-import 'package:stasi/widgets/recording_map.dart';
-import 'package:stasi/model/recording.dart';
+import 'package:strasi/db/database_bloc.dart';
+import 'package:strasi/widgets/recording_map.dart';
+import 'package:strasi/model/recording.dart';
 
 
 class RecordingEditor extends StatefulWidget {

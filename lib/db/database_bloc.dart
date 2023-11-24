@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:stasi/db/database_repository.dart';
-import 'package:stasi/model/recording.dart';
-import 'package:stasi/model/coordinate.dart';
+import 'package:strasi/db/database_repository.dart';
+import 'package:strasi/model/recording.dart';
+import 'package:strasi/model/coordinate.dart';
 
 
 class DatabaseBloc {

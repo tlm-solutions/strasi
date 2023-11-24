@@ -1,4 +1,4 @@
-import 'package:stasi/api_model/run.dart';
+import 'package:strasi/api_model/run.dart';
 
 class Recording {
   Recording({

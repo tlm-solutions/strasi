@@ -1,4 +1,4 @@
-package solutions.tlm.stasi
+package solutions.tlm.strasi
 
 import io.flutter.embedding.android.FlutterActivity
 

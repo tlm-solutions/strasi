@@ -5,15 +5,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:stasi/util/api_client.dart';
-import 'package:stasi/widgets/map_attribution.dart';
+import 'package:strasi/util/api_client.dart';
+import 'package:strasi/widgets/map_attribution.dart';
 
 import 'cached_tile_provider.dart';
 
 
 class _VehicleType {
   _VehicleType(this.type, this.name);
-  
+
   final String type;
   final String name;
 }
@@ -137,7 +137,7 @@ class _LiveViewMapState extends State<LiveViewMap> {
       children: [
         TileLayer(
           urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-          userAgentPackageName: "solutions.tlm.stasi",
+          userAgentPackageName: "solutions.tlm.strasi",
           tileProvider: CachedTileProvider(),
           tileBuilder: darkModeTileBuilder,
         ),

@@ -33,8 +33,8 @@ LocationSettings _getLocationSettings() {
       forceLocationManager: false,
       intervalDuration: const Duration(milliseconds: 500),
       foregroundNotificationConfig: const ForegroundNotificationConfig(
-        notificationTitle: "Stasi",
-        notificationText: "Stasi is watching you!",
+        notificationTitle: "Strasi",
+        notificationText: "Strasi is watching you!",
         enableWakeLock: true,
         setOngoing: true,
       ),

@@ -6,10 +6,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:gpx/gpx.dart';
-import 'package:stasi/api_model/live_gps_point.dart';
-import 'package:stasi/api_model/login_data.dart';
-import 'package:stasi/api_model/run.dart';
-import 'package:stasi/util/app_version.dart';
+import 'package:strasi/api_model/live_gps_point.dart';
+import 'package:strasi/api_model/login_data.dart';
+import 'package:strasi/api_model/run.dart';
+import 'package:strasi/util/app_version.dart';
 
 
 class ApiClient {
@@ -128,7 +128,7 @@ class ApiClient {
       "run": run.runNumber,
       "region": run.regionId,
       "app_commit": await AppVersion.getCommitId(),
-      "app_name": "stasi",
+      "app_name": "strasi",
       "finished": !live,
     };
 

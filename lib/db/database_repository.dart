@@ -1,6 +1,6 @@
-import 'package:stasi/db/database_dao.dart';
-import 'package:stasi/model/recording.dart';
-import 'package:stasi/model/coordinate.dart';
+import 'package:strasi/db/database_dao.dart';
+import 'package:strasi/model/recording.dart';
+import 'package:strasi/model/coordinate.dart';
 
 
 class DatabaseRepository {

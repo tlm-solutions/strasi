@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:stasi/api_model/live_gps_point.dart';
+import 'package:strasi/api_model/live_gps_point.dart';
 
-import 'package:stasi/notifiers/tracking_state_notifier.dart';
-import 'package:stasi/db/database_bloc.dart';
-import 'package:stasi/util/api_client.dart';
-import 'package:stasi/util/location_client.dart';
+import 'package:strasi/notifiers/tracking_state_notifier.dart';
+import 'package:strasi/db/database_bloc.dart';
+import 'package:strasi/util/api_client.dart';
+import 'package:strasi/util/location_client.dart';
 
 import '../api_model/run.dart';
 
@@ -237,7 +237,7 @@ class _VehicleSelectionState extends State<VehicleSelection> with AutomaticKeepA
                           debugPrint("Too inaccurate location: ${position.accuracy} (> $_minimumAccuracy)");
                           return;
                         }
-                        
+
                         await apiClient.sendLiveCords(trekkieUuid, LiveGpsPoint(
                           time: position.timestamp!,
                           latitude: position.latitude,

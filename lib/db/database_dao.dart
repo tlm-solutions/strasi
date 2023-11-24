@@ -1,6 +1,6 @@
-import 'package:stasi/db/database_provider.dart';
-import 'package:stasi/model/recording.dart';
-import 'package:stasi/model/coordinate.dart';
+import 'package:strasi/db/database_provider.dart';
+import 'package:strasi/model/recording.dart';
+import 'package:strasi/model/coordinate.dart';
 
 
 class DatabaseDao {
@@ -92,10 +92,10 @@ class DatabaseDao {
     return await db.rawUpdate(
         """
           UPDATE recordings
-          SET 
+          SET
             start_cord_id = (
-              SELECT cords.id 
-              FROM cords 
+              SELECT cords.id
+              FROM cords
               WHERE NOT DATETIME(?) > cords.time
               ORDER BY cords.time
             ),
@@ -114,7 +114,7 @@ class DatabaseDao {
         ]
     );
   }
-  
+
   Future<int> cleanRecording(int recordingId) async {
     final db = await dbProvider.db;
 
@@ -174,12 +174,12 @@ class DatabaseDao {
     return _cordMapListToCoordinates(await db.rawQuery(
         """
           SELECT
-            cords.id, cords.time, cords.latitude, cords.longitude, 
+            cords.id, cords.time, cords.latitude, cords.longitude,
             cords.altitude, cords.speed, cords.recording_id
           FROM cords
           LEFT JOIN recordings AS rec ON cords.recording_id = rec.id
           WHERE
-            rec.id = ? 
+            rec.id = ?
             AND (
               (cords.id >= rec.start_cord_id OR rec.start_cord_id IS NULL) AND
               (cords.id <= rec.end_cord_id OR rec.end_cord_id IS NULL)

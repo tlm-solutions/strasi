@@ -66,7 +66,7 @@ class _RecordingMapState extends State<RecordingMap> {
           children: [
             TileLayer(
               urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-              userAgentPackageName: "solutions.tlm.stasi",
+              userAgentPackageName: "solutions.tlm.strasi",
               tileProvider: CachedTileProvider(),
               tileBuilder: darkModeTileBuilder,
             ),

@@ -3,13 +3,13 @@ import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:stasi/db/database_bloc.dart';
-import 'package:stasi/notifiers/tracking_state_notifier.dart';
-import 'package:stasi/pages/live_view.dart';
-import 'package:stasi/util/theme.dart';
-import 'package:stasi/pages/recording_manager.dart';
-import 'package:stasi/pages/vehicle_selection.dart';
-import 'package:stasi/util/app_version.dart';
+import 'package:strasi/db/database_bloc.dart';
+import 'package:strasi/notifiers/tracking_state_notifier.dart';
+import 'package:strasi/pages/live_view.dart';
+import 'package:strasi/util/theme.dart';
+import 'package:strasi/pages/recording_manager.dart';
+import 'package:strasi/pages/vehicle_selection.dart';
+import 'package:strasi/util/app_version.dart';
 
 
 void main() async {
@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Stasi',
+      title: 'Strasi',
       theme: appTheme,
       home: Builder(
         builder: (context) {
@@ -113,7 +113,7 @@ class _BoardingPageState extends State<BoardingPage> {
             ],
             onDone: () {
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => MyHomePage(title: 'Stasi', databaseBloc: widget.databaseBloc)),
+                MaterialPageRoute(builder: (_) => MyHomePage(title: 'Strasi', databaseBloc: widget.databaseBloc)),
                     (Route <dynamic> route) => false,
               );
             },
@@ -122,7 +122,7 @@ class _BoardingPageState extends State<BoardingPage> {
           );
         }
 
-        return MyHomePage(title: 'Stasi', databaseBloc: widget.databaseBloc);
+        return MyHomePage(title: 'Strasi', databaseBloc: widget.databaseBloc);
       }
     );
 
@@ -182,7 +182,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 final commitId = snapshot.data!.trim().substring(0, 8);
 
                 return LicensePage(
-                  applicationName: "Stasi ($commitId)",
+                  applicationName: "Strasi ($commitId)",
                   applicationLegalese: """Copyright 2023 TLM Solutions
 
 Licensed under the Apache License, Version 2.0 (the "License");
