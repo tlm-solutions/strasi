@@ -1,3 +1,3 @@
-# Stasi
+# Strasi
 
-**Sta**ndortverfolgungssystem für **S**traßenbahnen mit **I**dentifikation.
+Strasi - **S**tandortverfolgungssystem für **T**rams und **R**egionalbusse mit **a**utomatisierter **S**atelliten**i**dentifikation

@@ -9,12 +9,12 @@ import 'package:gpx/gpx.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 
-import 'package:stasi/db/database_bloc.dart';
-import 'package:stasi/routes/recording_editor_route.dart';
-import 'package:stasi/notifiers/tracking_state_notifier.dart';
-import 'package:stasi/util/theme.dart';
-import 'package:stasi/util/api_client.dart';
-import 'package:stasi/model/recording.dart';
+import 'package:strasi/db/database_bloc.dart';
+import 'package:strasi/routes/recording_editor_route.dart';
+import 'package:strasi/notifiers/tracking_state_notifier.dart';
+import 'package:strasi/util/theme.dart';
+import 'package:strasi/util/api_client.dart';
+import 'package:strasi/model/recording.dart';
 
 
 class RecordingManager extends StatefulWidget {
@@ -249,8 +249,8 @@ Future<Gpx> _getCoordinatesAsGpx(DatabaseBloc databaseBloc, Recording recording)
   final gpx = Gpx()
     ..metadata = Metadata(
       name: DateFormat("y-M-d_H-m-s").format(DateTime.now().toUtc()),
-      desc: "Tracked by your friendly stasi comrades.",
-      keywords: "stasi",
+      desc: "Tracked by your friendly strasi comrades.",
+      keywords: "strasi",
       time: DateTime.now().toUtc(),
       extensions: {
         "line": "${recording.lineNumber}",
@@ -260,7 +260,7 @@ Future<Gpx> _getCoordinatesAsGpx(DatabaseBloc databaseBloc, Recording recording)
         "stop": recordingEnd.toIso8601String(),
       },
     )
-    ..creator = "Stasi for ${io.Platform.operatingSystem} - https://github.com/tlm-solutions/stasi"
+    ..creator = "Strasi for ${io.Platform.operatingSystem} - https://github.com/tlm-solutions/strasi"
     ..version = "1.1"
     ..trks = [Trk(
       trksegs: [Trkseg(
@@ -281,7 +281,7 @@ Future<Gpx> _getCoordinatesAsGpx(DatabaseBloc databaseBloc, Recording recording)
 /// Returns filepath or null if user canceled export.
 Future<String?> _exportCoordinatesToFile(DatabaseBloc databaseBloc, Recording recording) async {
   final gpxData = await _getCoordinatesAsGpx(databaseBloc, recording);
-  final fileName = "stasi-export_${recording.id}_${recording.lineNumber}_${recording.runNumber}.gpx";
+  final fileName = "strasi-export_${recording.id}_${recording.lineNumber}_${recording.runNumber}.gpx";
   final gpxFileContents = GpxWriter().asString(gpxData, pretty: true);
 
   // store using the dialog so the files are independent from the app

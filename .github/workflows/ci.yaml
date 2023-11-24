@@ -27,7 +27,7 @@ jobs:
   #    - name: Building IPA
   #      run: flutter build ipa --release --export-options-plist=ios/Runner/Info.plist
   #
-  #    # Collect the file and upload as artifact         
+  #    # Collect the file and upload as artifact
   #    - name: collect ipa artifacts
   #      uses: actions/upload-artifact@v2
   #      with:
@@ -58,7 +58,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-         name: stasi apk
+         name: strasi apk
          path: "build/app/outputs/flutter-apk/app-*.apk"
 
       - uses: alexellis/upload-assets@0.4.0

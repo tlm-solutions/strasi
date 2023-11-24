@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:stasi/util/api_client.dart';
-import 'package:stasi/widgets/live_view_map.dart';
+import 'package:strasi/util/api_client.dart';
+import 'package:strasi/widgets/live_view_map.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 
