@@ -19,11 +19,16 @@ const MaterialColor dvbYellow = MaterialColor(
 );
 
 ThemeData _appTheme() {
-  final ThemeData base = ThemeData.dark();
+  final ThemeData base = ThemeData(
+    useMaterial3: false,
+    brightness: Brightness.dark,
+  );
 
   return base.copyWith(
+    colorScheme: ColorScheme.fromSwatch(
+      primarySwatch: dvbYellow,
+    ),
     elevatedButtonTheme: _elevatedButtonTheme(base.elevatedButtonTheme),
-    colorScheme: ColorScheme.fromSwatch(primarySwatch: dvbYellow),
     textTheme: _textTheme(base.textTheme),
     inputDecorationTheme: _inputDecorationTheme(base.inputDecorationTheme),
     dividerTheme: _dividerTheme(base.dividerTheme),
