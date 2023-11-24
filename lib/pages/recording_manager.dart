@@ -227,7 +227,7 @@ class _OverflowingText extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.visible,
-              textScaleFactor: 2.1,
+              textScaler: const TextScaler.linear(2.1),
               style: TextStyle(
                 fontSize: 60,
                 height: 0.9,
