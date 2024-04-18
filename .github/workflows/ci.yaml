@@ -61,7 +61,7 @@ jobs:
          name: strasi apk
          path: "build/app/outputs/flutter-apk/app-*.apk"
 
-      - uses: alexellis/upload-assets@0.4.0
+      - uses: alexellis/upload-assets@0.4.1
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ github.token }}
