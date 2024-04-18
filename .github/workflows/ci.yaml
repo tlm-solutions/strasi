@@ -12,7 +12,7 @@ jobs:
   #  steps:
   #    # Checks-out our repository under $GITHUB_WORKSPACE, so our job can access it
   #    - name: Checkout repository
-  #      uses: actions/checkout@v2
+  #      uses: actions/checkout@v4
   #
   #    # Install flutter
   #    - name: Flutter get
@@ -38,7 +38,7 @@ jobs:
   build-ubuntu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
