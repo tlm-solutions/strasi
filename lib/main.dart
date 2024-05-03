@@ -171,18 +171,23 @@ class _MyHomePageState extends State<MyHomePage> {
             RecordingManager(databaseBloc: widget.databaseBloc),
             const LiveView(),
             FutureBuilder(
-              future: AppVersion.getCommitId(),
-              builder: (context, AsyncSnapshot<String> snapshot) {
+              future: _getLicensePageData(),
+              builder: (context, AsyncSnapshot<_LicensePageData> snapshot) {
                 if (snapshot.hasError) {
                   throw snapshot.error!;
                 } else if (!snapshot.hasData) {
                   return const CircularProgressIndicator();
                 }
+                final data = snapshot.data!;
 
-                final commitId = snapshot.data!.trim().substring(0, 8);
+                final commitId = data.commitId.trim().substring(0, 8);
+                var userId = "";
+                if (data.userId != null) {
+                  userId = " [user id: ${data.userId}]";
+                }
 
                 return LicensePage(
-                  applicationName: "Strasi ($commitId)",
+                  applicationName: "Strasi ($commitId)$userId",
                   applicationLegalese: """Copyright 2023 TLM Solutions
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -242,3 +247,21 @@ limitations under the License.""",
     super.dispose();
   }
 }
+
+class _LicensePageData {
+  final String commitId;
+  final String? userId;
+
+  const _LicensePageData({
+    required this.commitId,
+    required this.userId,
+  });
+}
+
+Future<_LicensePageData> _getLicensePageData() async {
+  final commitId = await AppVersion.getCommitId();
+  final userId = (await SharedPreferences.getInstance()).getString("user_id");
+
+  return _LicensePageData(commitId: commitId, userId: userId);
+}
+

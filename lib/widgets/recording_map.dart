@@ -40,11 +40,10 @@ class _RecordingMapState extends State<RecordingMap> {
   }
 
   void _updateBounds() {
-    /*
     _mapController.fitCamera(CameraFit.bounds(
       bounds: _getBoundsFromPoints(widget.pointList),
       padding: const EdgeInsets.all(80.0),
-    ));*/
+    ));
   }
 
   @override
@@ -62,6 +61,7 @@ class _RecordingMapState extends State<RecordingMap> {
               padding: const EdgeInsets.all(80.0),
             ),
             backgroundColor: Colors.black54,
+            maxZoom: 20,
           ),
           children: [
             TileLayer(
@@ -119,6 +119,8 @@ class _RecordingMapState extends State<RecordingMap> {
 
 
 LatLngBounds _getBoundsFromPoints(List<LatLng> points) {
+  const minDiff = 0.001;
+
   var bounds = LatLngBounds.fromPoints(points);
 
   /*
@@ -128,17 +130,23 @@ LatLngBounds _getBoundsFromPoints(List<LatLng> points) {
     This normally only happens during debugging.
   */
 
-  if (bounds.southWest.latitude == bounds.northEast.latitude) {
+  /* todo check if necessary. this is to figure out if the
+   the zoom level is to big. but we have set a global max zoom level */
+
+  final latitudeDiff = minDiff - (bounds.southWest.latitude - bounds.northEast.latitude).abs();
+  final longitudeDiff = minDiff - (bounds.southWest.longitude - bounds.northEast.longitude).abs();
+
+  if (latitudeDiff > 0) {
     bounds = LatLngBounds(
-      LatLng(bounds.southWest.latitude + 0.0005, bounds.southWest.longitude),
-      LatLng(bounds.northEast.latitude - 0.0005, bounds.northEast.longitude),
+      LatLng(bounds.southWest.latitude + minDiff / 2, bounds.southWest.longitude),
+      LatLng(bounds.northEast.latitude - minDiff / 2, bounds.northEast.longitude),
     );
   }
 
-  if (bounds.southWest.longitude == bounds.northEast.longitude) {
+  if (longitudeDiff > 0) {
     bounds = LatLngBounds(
-      LatLng(bounds.southWest.latitude, bounds.southWest.longitude - 0.0005),
-      LatLng(bounds.northEast.latitude, bounds.northEast.longitude + 0.005),
+      LatLng(bounds.southWest.latitude, bounds.southWest.longitude - minDiff / 2),
+      LatLng(bounds.northEast.latitude, bounds.northEast.longitude + minDiff / 2),
     );
   }
 
