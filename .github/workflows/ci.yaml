@@ -57,7 +57,7 @@ jobs:
       - run: flutter test
       - run: flutter build apk --release --split-per-abi
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
          name: strasi apk
          path: "build/app/outputs/flutter-apk/app-*.apk"
